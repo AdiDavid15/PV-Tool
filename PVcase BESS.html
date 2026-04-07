@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PV Layout Tool</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#f0f2ee;--sur:#fff;--bdr:#dde0d8;--txt:#1c1f18;--mut:#6b6e64;--acc:#2a7d4f;--accl:#e6f4ec;--accd:#1f5e3a;--wrn:#b87000;--wrnl:#fdf3dc;--rad:10px;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;min-height:100vh;}
+header{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 2rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.logo{font-size:18px;font-weight:700;letter-spacing:-.4px;}
+.logo span{color:var(--acc);}
+.tag{font-size:11px;background:var(--accl);color:var(--acc);padding:3px 10px;border-radius:99px;font-weight:600;}
+.main{max-width:900px;margin:1.5rem auto;padding:0 1rem;display:grid;grid-template-columns:1fr 300px;gap:1.25rem;align-items:start;}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rad);padding:1.25rem;margin-bottom:1rem;}
+.ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--bdr);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.f{display:flex;flex-direction:column;gap:4px;}
+.f label{font-size:12px;color:var(--mut);font-weight:500;}
+.f input,.f select{height:34px;border:1px solid var(--bdr);border-radius:7px;padding:0 10px;font-size:13px;background:#fafaf8;color:var(--txt);}
+.f input:focus,.f select:focus{outline:none;border-color:var(--acc);}
+.f input:disabled{opacity:.35;cursor:not-allowed;}
+.hint{font-size:11px;color:var(--mut);}
+.rg{display:flex;gap:6px;margin-top:2px;}
+.rb{flex:1;height:33px;border:1px solid var(--bdr);border-radius:7px;background:#fafaf8;color:var(--mut);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s;user-select:none;}
+.rb.on{background:var(--accl);border-color:var(--acc);color:var(--acc);font-weight:700;}
+.sub{background:var(--accl);border:1px solid #b5d9c5;border-radius:8px;padding:.85rem;margin-top:.85rem;}
+.sub-t{font-size:11px;color:var(--accd);font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em;}
+.wnote{font-size:11px;color:var(--wrn);background:var(--wrnl);border-radius:6px;padding:5px 9px;margin-top:5px;display:none;}
+.dv{border:none;border-top:1px solid var(--bdr);margin:1rem 0;}
+.eo{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--mut);cursor:pointer;padding:4px 0;}
+.eo input{margin-top:2px;accent-color:var(--acc);}
+.dwg{background:var(--wrnl);border:1px solid #e8c97a;border-radius:8px;padding:.85rem;margin-bottom:.85rem;}
+.dwg-t{font-size:11px;font-weight:700;color:var(--wrn);margin-bottom:8px;}
+.ds{display:flex;align-items:center;gap:8px;font-size:12px;color:#6b5500;margin-bottom:4px;}
+.sn{width:18px;height:18px;border-radius:50%;background:var(--wrn);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dwg-section-t{font-size:11px;font-weight:700;color:var(--accd);margin:8px 0 5px 0;}
+.dwg-divider{border:none;border-top:1px dashed #e8c97a;margin:8px 0;}
+.upz{border:2px dashed var(--bdr);border-radius:9px;padding:1.75rem 1rem;text-align:center;cursor:pointer;transition:all .15s;background:#fafaf8;}
+.upz:hover,.upz.over{border-color:var(--acc);background:var(--accl);}
+.upz-name{margin-top:8px;font-size:12px;font-weight:700;color:var(--acc);word-break:break-all;}
+#fi{display:none;}
+.gbtn{width:100%;height:44px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad);font-size:14px;font-weight:700;cursor:pointer;margin-top:1rem;transition:opacity .15s;}
+.gbtn:hover:not(:disabled){opacity:.88;}
+.gbtn:disabled{opacity:.35;cursor:not-allowed;}
+.spin-wrap{display:none;align-items:center;justify-content:center;gap:10px;padding:1.25rem;font-size:13px;color:var(--mut);}
+.spin-wrap.show{display:flex;}
+.spin{width:20px;height:20px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.res{display:none;background:var(--accl);border:1px solid #b5d9c5;border-radius:var(--rad);padding:1rem;margin-top:1rem;}
+.res.show{display:block;}
+.res-t{font-size:11px;font-weight:700;color:var(--accd);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px;}
+.stat{background:#fff;border-radius:7px;padding:8px;text-align:center;border:1px solid #d0e8d8;}
+.sv{font-size:20px;font-weight:700;color:var(--acc);}
+.sl{font-size:10px;color:var(--mut);margin-top:1px;}
+.dlbtn{width:100%;height:38px;background:var(--acc);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
+.dlbtn:hover{opacity:.88;}
+.err{display:none;background:#fdecea;border:1px solid #f5c0bc;border-radius:var(--rad);padding:.85rem;font-size:12px;color:#b03030;margin-top:1rem;line-height:1.6;white-space:pre-wrap;}
+.err.show{display:block;}
+.pvw{margin-top:1rem;display:none;}
+.pvw.show{display:block;}
+.pvw-t{font-size:11px;color:var(--mut);font-weight:600;margin-bottom:6px;}
+.pvw-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.pvw-toolbar span{font-size:11px;color:var(--mut);flex:1;}
+.zoom-btn{width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:#fafaf8;color:var(--txt);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.zoom-btn:hover{background:var(--accl);border-color:var(--acc);}
+.zoom-lbl{font-size:11px;color:var(--mut);min-width:36px;text-align:center;}
+.canvas-wrap{overflow:hidden;border:1px solid var(--bdr);border-radius:7px;background:#1a2020;position:relative;}
+canvas{display:block;background:#1a2020;}
+
+.er-card{margin-top:1rem;}
+.er-btn{width:100%;height:38px;background:#fff;color:var(--acc);border:1.5px solid var(--acc);border-radius:var(--rad);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.er-btn:hover{background:var(--accl);}
+.er-btn.active{background:var(--acc);color:#fff;}
+.er-dims{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.er-hint{font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5;}
+.er-placed{font-size:11px;color:var(--acc);font-weight:600;margin-top:6px;display:none;}
+.er-placed.show{display:block;}
+.bess-card{margin-top:1rem;}
+.bess-unit{background:#f5f0ff;border:1px solid #c9b8f0;border-radius:8px;padding:.75rem;margin-top:.75rem;}
+.bess-unit-t{font-size:11px;font-weight:700;color:#5b3fa0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
+.bess-road{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;}
+.bess-road-btn{flex:1;min-width:28px;height:28px;border:1px solid #c9b8f0;border-radius:5px;background:#fff;color:#5b3fa0;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.bess-road-btn.on{background:#5b3fa0;color:#fff;border-color:#5b3fa0;}
+.bess-placed{font-size:11px;color:#5b3fa0;font-weight:600;margin-top:6px;display:none;}
+.bess-placed.show{display:block;}
+@media(max-width:640px){.main{grid-template-columns:1fr;}.g3{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PV <span>Layout</span></div>
+  <div class="tag">פריסת פאנלים סולאריים</div>
+</header>
+
+<div class="main">
+  <div>
+
+    <div class="card">
+      <div class="ct">טכנולוגיית התקנה</div>
+      <div class="rg" id="tech-row">
+        <div class="rb on" onclick="setTech('fixed',this)">Fixed Tilt</div>
+        <div class="rb" onclick="setTech('sat',this)">Single Axis Tracker (SAT)</div>
+      </div>
+      <div id="sat-box" class="sub" style="display:none;">
+        <div class="sub-t">התקנה על ציר</div>
+        <div class="rg" id="trk-row">
+          <div class="rb on" onclick="setTrk('1p',this)">1P</div>
+          <div class="rb" onclick="setTrk('2p',this)">2P</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">פרמטרי פאנל</div>
+      <div class="g3">
+        <div class="f"><label>אורך (מ"מ)</label><input type="number" id="panel_h" value="2278"/></div>
+        <div class="f"><label>רוחב (מ"מ)</label><input type="number" id="panel_w" value="1134"/></div>
+        <div class="f"><label>הספק (Wp)</label><input type="number" id="panel_wp" value="580"/></div>
+      </div>
+      <div class="dv"></div>
+      <div class="f"><label>אוריינטציה</label>
+        <div class="rg" id="orient-row" style="margin-top:3px;">
+          <div class="rb on" onclick="setOrient('portrait',this)">Portrait (אנכי)</div>
+          <div class="rb" onclick="setOrient('landscape',this)">Landscape (אופקי)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">מבנה שולחן וסטרינג</div>
+      <div class="g3">
+        <div class="f"><label>פאנלים לסטרינג</label><input type="number" id="panels_string" value="28"/><span class="hint">פאנלים בסדרה</span></div>
+        <div class="f"><label>סטרינגים לשולחן</label>
+          <select id="strings_table"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
+        </div>
+        <div class="f"><label>פער שולחנות (מ"מ)</label><input type="number" id="table_gap" value="20"/><span class="hint">פער קונסטרוקטיבי</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">פרמטרי מערך</div>
+      <div class="f" style="margin-bottom:10px;">
+        <label>כיוון פריסה</label>
+        <div class="rg" id="align-row" style="margin-top:3px;">
+          <div class="rb on" onclick="setAlign('south',this)">True South — דרום אמיתי</div>
+          <div class="rb" onclick="setAlign('polygon',this)">לפי הפולגון — Polygon Aligned</div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Tilt (°)</label><input type="number" id="tilt" value="20" min="0" max="90"/>
+          <div class="wnote" id="tilt-note">לא רלוונטי בטראקר</div></div>
+        <div class="f" id="azimuth-wrap">
+          <label>Azimuth (°)</label>
+          <input type="number" id="azimuth" value="180"/>
+          <span class="hint">180° = דרום</span>
+        </div>
+        <div class="f"><label>Row Spacing (מ')</label><input type="number" id="row_spacing" value="6.5" step="0.1"/></div>
+        <div class="f"><label>Setback (מ')</label><input type="number" id="setback" value="5" step="0.5"/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">טיפול בקצוות פולגון</div>
+      <label class="eo"><input type="radio" name="edge" value="partial" checked/> שולחן חלקי בקצה</label>
+      <label class="eo"><input type="radio" name="edge" value="full"/> שולחנות שלמים בלבד</label>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="ct">קובץ גבולות המתקן</div>
+
+      <div class="dwg">
+        <div class="dwg-t">כיצד להכין את קובץ הגבולות?</div>
+        <div class="dwg-section-t">יש לך קובץ DWG?</div>
+        <div class="ds"><span class="sn">1</span><span>פתח את הקובץ באוטוקאד</span></div>
+        <div class="ds"><span class="sn">2</span><span>לחץ על תפריט ← <strong>Save As</strong> ← <strong>AutoCAD DXF</strong></span></div>
+        <div class="ds"><span class="sn">3</span><span>בחר גרסה: <strong>AutoCAD 2010 DXF</strong></span></div>
+        <div class="ds"><span class="sn">4</span><span>שמור והעלה את הקובץ כאן</span></div>
+        <div class="dwg-divider"></div>
+        <div class="dwg-section-t">אין AutoCAD? המרה אונליין חינמית:</div>
+        <div class="ds"><span class="sn">1</span><span>נכנס ל־ <a href="https://cloudconvert.com/dwg-to-dxf" target="_blank" style="color:var(--accd);font-weight:600;">cloudconvert.com/dwg-to-dxf</a></span></div>
+        <div class="ds"><span class="sn">2</span><span>בחר את קובץ ה-DWG ← לחץ <strong>Convert</strong></span></div>
+        <div class="ds"><span class="sn">3</span><span>הורד את ה-DXF והעלה אותו כאן</span></div>
+      </div>
+
+      <div class="upz" id="drop-zone" onclick="document.getElementById('fi').click()">
+        <div style="font-size:30px;margin-bottom:6px;">&#128193;</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">גרור קובץ <strong>DXF</strong> לכאן<br/>או לחץ לבחירה</div>
+        <div class="upz-name" id="file-name"></div>
+      </div>
+      <input type="file" id="fi" accept=".dxf,.DXF"/>
+
+      <button class="gbtn" id="gen-btn" onclick="runLayout()" disabled>צור פריסה &larr;</button>
+
+      <div class="spin-wrap" id="spinner"><div class="spin"></div> מחשב פריסה...</div>
+
+      <div class="res" id="result-box">
+        <div class="res-t">&#10003; פריסה הושלמה</div>
+        <div class="stats">
+          <div class="stat"><div class="sv" id="r-tables">-</div><div class="sl">שולחנות</div></div>
+          <div class="stat"><div class="sv" id="r-panels">-</div><div class="sl">פאנלים</div></div>
+          <div class="stat"><div class="sv" id="r-kw">-</div><div class="sl">kWp</div></div>
+        </div>
+        <button class="dlbtn" id="dl-btn">&#11015; הורד DXF</button>
+      </div>
+
+      <div class="err" id="error-box"></div>
+
+      <div class="pvw" id="preview-wrap">
+        <div class="pvw-toolbar">
+          <span class="pvw-t">תצוגה מקדימה</span>
+          <button class="zoom-btn" onclick="changeZoom(-0.25)" title="הקטן">−</button>
+          <span class="zoom-lbl" id="zoom-lbl">100%</span>
+          <button class="zoom-btn" onclick="changeZoom(0.25)" title="הגדל">+</button>
+          <button class="zoom-btn" onclick="resetZoom()" title="איפוס זום" style="width:auto;padding:0 8px;font-size:11px;">⌂</button>
+        </div>
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas id="preview-canvas" height="300"></canvas>
+        </div>
+      </div>
+
+      <!-- חדר חשמל -->
+      <div class="card er-card" id="er-card" style="display:none;">
+        <div class="ct">חדר חשמל</div>
+        <div class="er-dims">
+          <div class="f"><label>רוחב (מ')</label><input type="number" id="er-w" value="12" min="2" max="50" step="0.5"/></div>
+          <div class="f"><label>אורך (מ')</label><input type="number" id="er-h" value="8" min="2" max="50" step="0.5"/></div>
+        </div>
+        <div class="er-hint">לחץ על כפתור, ואז לחץ על גבול הפולגון בתצוגה המקדימה למיקום החדר</div>
+        <button class="er-btn" id="er-btn" onclick="toggleErMode()" style="margin-top:10px;">📍 מקם חדר חשמל</button>
+        <div class="er-placed" id="er-placed">✓ חדר חשמל מוקם — הפעל שוב "צור פריסה" לעדכון</div>
+        <button class="er-btn" id="er-clear" onclick="clearEr()" style="margin-top:6px;border-color:var(--bdr);color:var(--mut);">✕ הסר חדר חשמל</button>
+      </div>
+
+      <!-- BESS -->
+      <div class="card bess-card" id="bess-card" style="display:none;">
+        <div class="ct">אגירת אנרגיה — BESS</div>
+
+        <!-- Toggle יש/אין BESS -->
+        <label class="eo" style="margin-bottom:10px;">
+          <input type="checkbox" id="bess-enabled" onchange="toggleBessEnabled(this)" style="accent-color:#5b3fa0;margin-top:2px;"/>
+          <span style="font-weight:600;color:#5b3fa0;">פרויקט כולל אגירת אנרגיה</span>
+        </label>
+
+        <div id="bess-body" style="display:none;">
+          <div class="f" style="margin-bottom:10px;">
+            <label>סוג צימוד</label>
+            <div class="rg" id="bess-coupling-row">
+              <div class="rb on" onclick="setBessCoupling('ac',this)">AC Coupling</div>
+              <div class="rb" onclick="setBessCoupling('dc',this)">DC Coupling</div>
+            </div>
+          </div>
+          <div class="f" style="margin-bottom:10px;">
+            <label>כמות יחידות BESS</label>
+            <input type="number" id="bess-count" value="1" min="1" max="10" step="1"/>
+          </div>
+          <div class="bess-unit">
+            <div class="bess-unit-t">מידות יחידה</div>
+            <div class="g2">
+              <div class="f"><label>רוחב מכולה (מ')</label><input type="number" id="bess-cont-w" value="5.1" step="0.1"/></div>
+              <div class="f"><label>אורך מכולה (מ')</label><input type="number" id="bess-cont-l" value="12.5" step="0.1"/></div>
+            </div>
+            <div class="g2" style="margin-top:8px;">
+              <div class="f"><label>רוחב SKID (מ')</label><input type="number" id="bess-skid-w" value="2" step="0.1"/></div>
+              <div class="f"><label>אורך SKID (מ')</label><input type="number" id="bess-skid-l" value="12" step="0.1"/></div>
+            </div>
+            <div class="g2" style="margin-top:8px;">
+              <div class="f"><label>פינוי מכולה (מ')</label><input type="number" id="bess-clear" value="3.5" step="0.5"/></div>
+              <div class="f"><label>פינוי SKID (מ')</label><input type="number" id="bess-skid-clear" value="0.5" step="0.1"/></div>
+            </div>
+          </div>
+          <div class="bess-unit">
+            <div class="bess-unit-t">כביש גישה — רוחב 5 מ'</div>
+            <div style="font-size:11px;color:var(--mut);margin-bottom:8px;">בחר מאיזה צדדים:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button class="bess-road-btn on" id="bess-road-top" onclick="toggleRoad('top',this)">↑ צפון</button>
+              <button class="bess-road-btn on" id="bess-road-bot" onclick="toggleRoad('bot',this)">↓ דרום</button>
+              <button class="bess-road-btn" id="bess-road-left" onclick="toggleRoad('left',this)">← מערב</button>
+              <button class="bess-road-btn on" id="bess-road-right" onclick="toggleRoad('right',this)">→ מזרח</button>
+            </div>
+          </div>
+          <button class="er-btn" onclick="placeBess()" style="margin-top:10px;border-color:#5b3fa0;color:#5b3fa0;">⚡ הצב BESS</button>
+          <div class="bess-placed" id="bess-placed">✓ BESS מוצב — פריסה עודכנה</div>
+          <button class="er-btn" onclick="clearBess()" style="margin-top:6px;border-color:var(--bdr);color:var(--mut);">✕ הסר BESS</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+var tech = 'fixed';
+var orient = 'portrait';
+var trk = '1p';
+var selectedFile = null;
+var resultBlob = null;
+// ER Block - MAZEV only (clean electrical room outline)
+var ER_BLOCK = (function(){
+  // All dimensions in METERS, from image
+  // Total: 10.55m wide x 3.9m tall
+  // Wall thickness: 0.15m
+  // Left room: 4.10m, Right room: 6.30m
+  // Door width: ~1.0m (3 at bottom, 1 at left side)
+  var W=10.55, H=3.9, wt=0.15;
+  var divX=4.10+wt; // dividing wall at 4.25m
+  // Paving (אבנים משלבות) margin around building
+  var pad=1.5;
+
+  function rect(x,y,w,h,layer){
+    return {layer:layer,pts:[[x,y],[x+w,y],[x+w,y+h],[x,y+h],[x,y]]};
+  }
+  function arc(cx,cy,r,startDeg,endDeg,layer){
+    var pts=[]; var steps=16;
+    var s=startDeg*Math.PI/180, e=endDeg*Math.PI/180;
+    for(var i=0;i<=steps;i++){
+      var a=s+(e-s)*i/steps;
+      pts.push([Math.round((cx+Math.cos(a)*r)*1000)/1000,
+                Math.round((cy+Math.sin(a)*r)*1000)/1000]);
+    }
+    return {layer:layer,pts:pts};
+  }
+
+  var polys=[], lns=[];
+
+  // Outer wall (double line - outer)
+  polys.push(rect(0,0,W,H,'ELECTRICAL_ROOM'));
+  // Inner wall
+  polys.push(rect(wt,wt,W-2*wt,H-2*wt,'ELECTRICAL_ROOM'));
+
+  // Internal dividing wall (vertical)
+  lns.push({layer:'ELECTRICAL_ROOM',x1:divX,y1:0,x2:divX,y2:H});
+  lns.push({layer:'ELECTRICAL_ROOM',x1:divX+wt,y1:0,x2:divX+wt,y2:H});
+
+  // Windows left room: 2 windows on top wall
+  var winW=0.8, winH=0.1;
+  polys.push(rect(0.8,H-wt,winW,wt,'ELECTRICAL_ROOM')); // window 1 top
+  polys.push(rect(2.2,H-wt,winW,wt,'ELECTRICAL_ROOM')); // window 2 top
+
+  // Window right room: 1 window on right wall
+  polys.push(rect(W-wt,1.2,wt,1.0,'ELECTRICAL_ROOM'));
+
+  // Door left side (arc)
+  polys.push(arc(wt,1.8,0.9,0,90,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:wt,y1:1.8,x2:wt,y2:2.7});
+
+  // 3 doors at bottom
+  var d1x=1.5, d2x=4.6, d3x=7.5, dw=0.9;
+  polys.push(arc(d1x,0,dw,-90,0,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:d1x,y1:0,x2:d1x+dw,y2:0});
+  polys.push(arc(d2x,0,dw,-90,0,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:d2x,y1:0,x2:d2x+dw,y2:0});
+  polys.push(arc(d3x,0,dw,-90,0,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:d3x,y1:0,x2:d3x+dw,y2:0});
+
+  // Paving border (אבנים משלבות outline)
+  polys.push(rect(-pad,-pad,W+2*pad,H+2*pad,'PAVING'));
+
+  return {w:W, h:H, polys:polys, lines:lns};
+})();
+var erMode = false;
+var electricalRoom = null;
+var lastPoly = null;
+var lastRes = null;
+
+// BESS state
+var bessCoupling = 'ac';
+var bessUnits = []; // array of placed BESS unit polygons
+var bessRoad = {top:true, bot:true, left:false, right:true};
+
+function setBessCoupling(v, el) {
+  bessCoupling = v;
+  document.querySelectorAll('#bess-coupling-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
+
+function toggleRoad(side, el) {
+  bessRoad[side] = !bessRoad[side];
+  el.classList.toggle('on', bessRoad[side]);
+}
+
+// Compute one BESS unit footprint (with clearance) centered at cx,cy rotated at angle
+// Returns array of exclusion polygons (for panel removal) and draw polygons
+function bessUnitGeometry(cx, cy, angle) {
+  var contW = parseFloat(document.getElementById('bess-cont-w').value)||5.1;
+  var contL = parseFloat(document.getElementById('bess-cont-l').value)||12.5;
+  var skidW = parseFloat(document.getElementById('bess-skid-w').value)||2;
+  var skidL = parseFloat(document.getElementById('bess-skid-l').value)||12;
+  var clr   = parseFloat(document.getElementById('bess-clear').value)||3.5;
+  var sclr  = parseFloat(document.getElementById('bess-skid-clear').value)||0.5;
+  var road  = 5;
+
+  // Layout along X axis (angle=0): cont | skid | cont
+  // Total width = contW+sclr + skidW + sclr+contW
+  // Total length = max(contL, skidL)
+  var totalW = contW + sclr + skidW + sclr + contW;
+  var totalL = Math.max(contL, skidL);
+
+  // With clearance
+  var clrW = totalW + 2*clr;
+  var clrL = totalL + 2*clr;
+
+  // Road addition
+  var roadTop    = bessRoad.top  ? road : 0;
+  var roadBot    = bessRoad.bot  ? road : 0;
+  var roadLeft   = bessRoad.left ? road : 0;
+  var roadRight  = bessRoad.right? road : 0;
+
+  var fullW = clrW + roadLeft + roadRight;
+  var fullL = clrL + roadTop  + roadBot;
+
+  function rotPt(lx, ly) {
+    var cos=Math.cos(angle), sin=Math.sin(angle);
+    return [cx + lx*cos - ly*sin, cy + lx*sin + ly*cos];
+  }
+
+  function makeRect(x, y, w, l) {
+    // centered rect
+    var hx=w/2, hy=l/2;
+    return [rotPt(x-hx,y-hy),rotPt(x+hx,y-hy),rotPt(x+hx,y+hy),rotPt(x-hx,y+hy),rotPt(x-hx,y-hy)];
+  }
+
+  // Exclusion = full footprint with road
+  var exclusion = makeRect(0, 0, fullW, fullL);
+
+  // Draw polys: two containers + skid + clearance outline
+  var cont1X = -(sclr/2 + skidW/2 + contW/2);
+  var cont2X =  (sclr/2 + skidW/2 + contW/2);
+  var cont1 = makeRect(cont1X, 0, contW, contL);
+  var cont2 = makeRect(cont2X, 0, contW, contL);
+  var skid  = makeRect(0, 0, skidW, skidL);
+  var clrBox = makeRect(0, 0, clrW, clrL);
+
+  // Road strips
+  var roads = [];
+  if (bessRoad.top)   roads.push(makeRect(0,  (clrL/2 + roadTop/2),   clrW, roadTop));
+  if (bessRoad.bot)   roads.push(makeRect(0, -(clrL/2 + roadBot/2),   clrW, roadBot));
+  if (bessRoad.left)  roads.push(makeRect(-(clrW/2+roadLeft/2), 0, roadLeft, clrL));
+  if (bessRoad.right) roads.push(makeRect( (clrW/2+roadRight/2),0, roadRight,clrL));
+
+  return {
+    exclusion: exclusion,
+    drawPolys: [cont1, cont2, skid, clrBox].concat(roads),
+    cont1: cont1, cont2: cont2, skid: skid,
+    roads: roads, clrBox: clrBox,
+    totalW: fullW, totalL: fullL
+  };
+}
+
+// Place BESS units based on coupling type
+function placeBess() {
+  if (!lastPoly) return;
+  var count = parseInt(document.getElementById('bess-count').value)||1;
+  bessUnits = [];
+
+  if (bessCoupling === 'ac') {
+    // AC: place next to electrical room
+    if (!electricalRoom) { alert('יש למקם חדר חשמל תחילה לAC Coupling'); return; }
+    var er = electricalRoom;
+    var angle = er.angle;
+    var geo = bessUnitGeometry(0, 0, 0); // temp to get size
+    var spacing = geo.totalW;
+    // Place units side by side next to ER
+    var startOffset = -(count-1)*spacing/2;
+    for (var i=0; i<count; i++) {
+      var offset = startOffset + i*spacing;
+      // Place on the inward side of ER (perpendicular to edge)
+      var nx = er.inNx, ny = er.inNy;
+      var erH = ER_BLOCK.h;
+      var dist = erH/2 + geo.totalL/2 + 2;
+      var cx = er.worldX + nx*dist + Math.cos(angle)*offset;
+      var cy = er.worldY + ny*dist + Math.sin(angle)*offset;
+      bessUnits.push({cx:cx, cy:cy, angle:angle});
+    }
+  } else {
+    // DC: distribute evenly across polygon
+    var c = centroid(lastPoly);
+    var b = {mnx:Infinity,mny:Infinity,mxx:-Infinity,mxy:-Infinity};
+    lastPoly.forEach(function(p){
+      b.mnx=Math.min(b.mnx,p[0]); b.mny=Math.min(b.mny,p[1]);
+      b.mxx=Math.max(b.mxx,p[0]); b.mxy=Math.max(b.mxy,p[1]);
+    });
+    var geo2 = bessUnitGeometry(0,0,0);
+    var step = (b.mxx-b.mnx) / (count+1);
+    for (var i=0; i<count; i++) {
+      var cx2 = b.mnx + step*(i+1);
+      var cy2 = c[1];
+      bessUnits.push({cx:cx2, cy:cy2, angle:0});
+    }
+  }
+
+  document.getElementById('bess-placed').classList.add('show');
+  autoRecalc();
+}
+
+function clearBess() {
+  bessUnits = [];
+  document.getElementById('bess-placed').classList.remove('show');
+  autoRecalc();
+}
+
+// Get all BESS exclusion polygons
+function bessExclusionPolys() {
+  var polys = [];
+  bessUnits.forEach(function(u) {
+    var g = bessUnitGeometry(u.cx, u.cy, u.angle);
+    polys.push(g.exclusion);
+  });
+  return polys;
+}
+
+function autoRecalc() {
+  if (!lastPoly) return;
+  try {
+    var res = computeLayout(lastPoly);
+    lastRes = res;
+    var dxf = writeDxf(res, lastPoly);
+    resultBlob = new Blob([dxf], {type:'application/dxf'});
+    document.getElementById('r-tables').textContent = res.tables.length;
+    document.getElementById('r-panels').textContent = res.totalPanels;
+    document.getElementById('r-kw').textContent = res.kw.toFixed(1);
+    var rb = document.getElementById('result-box');
+    rb.classList.add('show');
+    rb.style.transition='background .15s';
+    rb.style.background='#b5d9c5';
+    setTimeout(function(){rb.style.background='';},400);
+    drawPreview(res, lastPoly);
+    document.getElementById('preview-wrap').classList.add('show');
+  } catch(e) { if(lastRes) drawPreview(lastRes, lastPoly); }
+}
+
+function setTech(v, el) {
+  tech = v;
+  document.querySelectorAll('#tech-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  var isSat = (v === 'sat');
+  document.getElementById('sat-box').style.display = isSat ? 'block' : 'none';
+  document.getElementById('tilt').disabled = isSat;
+  document.getElementById('tilt-note').style.display = isSat ? 'block' : 'none';
+}
+
+function setTrk(v, el) {
+  trk = v;
+  document.querySelectorAll('#trk-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
+
+function setOrient(v, el) {
+  orient = v;
+  document.querySelectorAll('#orient-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
+
+var alignMode = 'south';
+function setAlign(v, el) {
+  alignMode = v;
+  document.querySelectorAll('#align-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('azimuth-wrap').style.opacity = (v==='polygon') ? '0.35' : '1';
+  document.getElementById('azimuth').disabled = (v==='polygon');
+}
+
+function fv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function iv(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+var dz = document.getElementById('drop-zone');
+var fi = document.getElementById('fi');
+
+dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', function(){ dz.classList.remove('over'); });
+dz.addEventListener('drop', function(e){
+  e.preventDefault(); dz.classList.remove('over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+fi.addEventListener('change', function(e){
+  if (e.target.files[0]) setFile(e.target.files[0]);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('file-name').textContent = f.name;
+  document.getElementById('gen-btn').disabled = false;
+  hideAll();
+}
+
+function hideAll() {
+  document.getElementById('result-box').classList.remove('show');
+  document.getElementById('error-box').classList.remove('show');
+  document.getElementById('spinner').classList.remove('show');
+  document.getElementById('preview-wrap').classList.remove('show');
+}
+
+function showErr(msg) {
+  var el = document.getElementById('error-box');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+// ── DXF PARSER ──────────────────────────────────────────────────
+function parseDxf(text) {
+  var raw = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = raw.split('\n');
+
+  var pairs = [];
+  for (var i = 0; i + 1 < lines.length; i += 2) {
+    var code = lines[i].trim();
+    var val  = lines[i+1].trim();
+    pairs.push([code, val]);
+  }
+
+  var polys = [];
+  var idx = 0;
+
+  while (idx < pairs.length) {
+    var code = pairs[idx][0];
+    var val  = pairs[idx][1];
+
+    if (code === '0' && val === 'LWPOLYLINE') {
+      var xs = [], ys = [];
+      idx++;
+      while (idx < pairs.length && pairs[idx][0] !== '0') {
+        var c = pairs[idx][0];
+        var v = pairs[idx][1];
+        if (c === '10') xs.push(parseFloat(v));
+        else if (c === '20') ys.push(parseFloat(v));
+        idx++;
+      }
+      var pts = [];
+      for (var k = 0; k < Math.min(xs.length, ys.length); k++) {
+        pts.push([xs[k], ys[k]]);
+      }
+      if (pts.length >= 3) polys.push(pts);
+
+    } else if (code === '0' && val === 'POLYLINE') {
+      var pts2 = [];
+      idx++;
+      while (idx < pairs.length) {
+        if (pairs[idx][0] === '0' && pairs[idx][1] === 'VERTEX') {
+          var vx = null, vy = null;
+          idx++;
+          while (idx < pairs.length && pairs[idx][0] !== '0') {
+            if (pairs[idx][0] === '10') vx = parseFloat(pairs[idx][1]);
+            else if (pairs[idx][0] === '20') vy = parseFloat(pairs[idx][1]);
+            idx++;
+          }
+          if (vx !== null && vy !== null) pts2.push([vx, vy]);
+        } else if (pairs[idx][0] === '0' && pairs[idx][1] === 'SEQEND') {
+          idx++; break;
+        } else {
+          idx++;
+        }
+      }
+      if (pts2.length >= 3) polys.push(pts2);
+
+    } else {
+      idx++;
+    }
+  }
+
+  if (!polys.length) {
+    throw new Error('לא נמצא פולגון בקובץ.\nודא שהקובץ נשמר כ-DXF מ-AutoCAD.');
+  }
+
+  polys.sort(function(a, b) {
+    function area(p) {
+      var xs = p.map(function(q){return q[0];}),
+          ys = p.map(function(q){return q[1];});
+      return (Math.max.apply(null,xs)-Math.min.apply(null,xs)) *
+             (Math.max.apply(null,ys)-Math.min.apply(null,ys));
+    }
+    return area(b) - area(a);
+  });
+  return polys[0];
+}
+
+// ── GEOMETRY ────────────────────────────────────────────────────
+function rot(x, y, cx, cy, r) {
+  var dx = x-cx, dy = y-cy;
+  return [cx + dx*Math.cos(r) - dy*Math.sin(r),
+          cy + dx*Math.sin(r) + dy*Math.cos(r)];
+}
+
+function bbox(pts) {
+  var xs = pts.map(function(p){return p[0];}),
+      ys = pts.map(function(p){return p[1];});
+  return { mnx:Math.min.apply(null,xs), mny:Math.min.apply(null,ys),
+           mxx:Math.max.apply(null,xs), mxy:Math.max.apply(null,ys) };
+}
+
+function centroid(pts) {
+  var sx = 0, sy = 0;
+  for (var i=0;i<pts.length;i++){sx+=pts[i][0];sy+=pts[i][1];}
+  return [sx/pts.length, sy/pts.length];
+}
+
+function pip(px, py, poly) {
+  var inside = false;
+  for (var i=0, j=poly.length-1; i<poly.length; j=i++) {
+    var xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+    if (((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi))
+      inside = !inside;
+  }
+  return inside;
+}
+
+function shrink(pts, d) {
+  // True inward offset per edge
+  var n = pts.length;
+  var result = [];
+  // detect winding (CW or CCW)
+  var area = 0;
+  for (var i=0; i<n; i++) {
+    var j=(i+1)%n;
+    area += pts[i][0]*pts[j][1] - pts[j][0]*pts[i][1];
+  }
+  var cw = area < 0; // clockwise if negative
+  for (var i=0; i<n; i++) {
+    var prev = pts[(i-1+n)%n];
+    var cur  = pts[i];
+    var next = pts[(i+1)%n];
+    // edge vectors
+    var e1x=cur[0]-prev[0], e1y=cur[1]-prev[1];
+    var e2x=next[0]-cur[0], e2y=next[1]-cur[1];
+    var l1=Math.sqrt(e1x*e1x+e1y*e1y)||1;
+    var l2=Math.sqrt(e2x*e2x+e2y*e2y)||1;
+    // inward normals
+    var s = cw ? 1 : -1;
+    var n1x=s*e1y/l1, n1y=-s*e1x/l1;
+    var n2x=s*e2y/l2, n2y=-s*e2x/l2;
+    // bisector
+    var bx=n1x+n2x, by=n1y+n2y;
+    var bl=Math.sqrt(bx*bx+by*by)||1;
+    bx/=bl; by/=bl;
+    // scale factor to achieve distance d from both edges
+    var dot=n1x*n2x+n1y*n2y;
+    var factor = dot > -0.9999 ? d/Math.sqrt((1+dot)/2) : d;
+    result.push([cur[0]+factor*bx, cur[1]+factor*by]);
+  }
+  return result;
+}
+
+// ── LAYOUT ──────────────────────────────────────────────────────
+function longestEdgeAzimuth(poly) {
+  var maxLen = 0, bestAz = 180;
+  var n = poly.length;
+  for (var i=0; i<n; i++) {
+    var a=poly[i], b=poly[(i+1)%n];
+    var dx=b[0]-a[0], dy=b[1]-a[1];
+    var len=Math.sqrt(dx*dx+dy*dy);
+    if (len > maxLen) {
+      maxLen = len;
+      // azimuth of this edge (degrees from north, clockwise)
+      var ang = Math.atan2(dx, dy) * 180 / Math.PI;
+      if (ang < 0) ang += 180; // normalize to 0-180
+      bestAz = ang;
+    }
+  }
+  return bestAz;
+}
+
+function computeLayout(poly) {
+  var pW  = fv('panel_w')/1000,
+      pH  = fv('panel_h')/1000,
+      pWp = fv('panel_wp');
+  var az  = (alignMode==='polygon') ? longestEdgeAzimuth(poly) : fv('azimuth'),
+      rsp = fv('row_spacing'),
+      sb  = fv('setback');
+  var pps = Math.max(1, iv('panels_string')),
+      spt = Math.max(1, iv('strings_table')),
+      tg  = fv('table_gap')/1000;
+  var em  = document.querySelector('input[name="edge"]:checked').value;
+
+  var cw = (orient==='portrait') ? pW : pH;
+  var rh = (orient==='portrait') ? pH : pW;
+  if (tech==='sat' && trk==='2p') rh *= 2;
+
+  // tw = string length along row (panels_per_string panels laid side by side)
+  // th = table height perpendicular to row (1P or 2P)
+  var panels_in_height = (tech === 'sat' && trk === '2p') ? 2 : 1;
+  var tw = pps * cw;   // panels_per_string × panel_width along row
+  var th = panels_in_height * rh;  // 1 or 2 panels tall
+
+  var sh = shrink(poly, sb);
+  var c  = centroid(sh);
+  var cx = c[0], cy = c[1];
+  var rr = -(az - 180) * Math.PI / 180;
+
+  var rs = sh.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
+  var b  = bbox(rs);
+
+  var tables = [];
+  var y = b.mny;
+
+  // Build exclusion zones (ER + BESS) in rotated space
+  var erPolyW = erWorldPoly();
+  var bessExcl = bessExclusionPolys();
+  var allExclPolys = (erPolyW ? [erPolyW] : []).concat(bessExcl);
+  // Rotate exclusion polys into layout space
+  var allExclRot = allExclPolys.map(function(poly) {
+    return poly.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
+  });
+
+  function overlapsExclusion(pts) {
+    for (var e=0; e<allExclRot.length; e++) {
+      var ep = allExclRot[e];
+      for (var i=0;i<pts.length;i++) {
+        if (pip(pts[i][0],pts[i][1],ep)) return true;
+      }
+      for (var i=0;i<ep.length;i++) {
+        if (pip(ep[i][0],ep[i][1],pts)) return true;
+      }
+    }
+    return false;
+  }
+
+  while (y + th <= b.mxy + 0.001) {
+    var x = b.mnx;
+    while (x < b.mxx) {
+      var ttw = tw;
+      if (x + tw > b.mxx + 0.001) {
+        if (em === 'full') { x += tw + tg; continue; }
+        var ns = Math.floor((b.mxx - x) / cw);
+        if (ns < 1) break;
+        ttw = ns * cw;
+      }
+      // also clip if right edge exceeds boundary
+      if (x + ttw > b.mxx) ttw = Math.floor((b.mxx - x) / cw) * cw;
+      if (ttw <= 0) { x += tw + tg; continue; }
+      var allIn = pip(x,y,rs) && pip(x+ttw,y,rs) && pip(x+ttw,y+th,rs) && pip(x,y+th,rs);
+      if (allIn) {
+        var co = [[x,y],[x+ttw,y],[x+ttw,y+th],[x,y+th]];
+        var origCo = co.map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
+        if (overlapsExclusion(co)) { x += tw + tg; continue; }
+        var panels = [];
+        var nst = Math.round(ttw/cw);  // number of panels along row
+        for (var si=0; si<nst; si++) {
+          for (var pi=0; pi<panels_in_height; pi++) {  // 1P or 2P tall
+            var px0=x+si*cw, py0=y+pi*rh;
+            var pc=[[px0,py0],[px0+cw,py0],[px0+cw,py0+rh],[px0,py0+rh]];
+            panels.push(pc.map(function(p){ return rot(p[0],p[1],cx,cy,-rr); }));
+          }
+        }
+        tables.push({outline:origCo, panels:panels, strings:nst, pps:panels_in_height});
+      }
+      x += tw + tg;
+    }
+    y += rsp;
+  }
+
+  if (!tables.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Row Spacing או Setback.');
+
+  var tp = tables.reduce(function(s,t){ return s + t.strings*t.pps; }, 0);
+  return { tables:tables, shrunk:sh, totalPanels:tp, kw:tp*pWp/1000 };
+}
+
+// ── DXF WRITER ──────────────────────────────────────────────────
+function writeDxf(res, orig) {
+  var L = [];
+  function g(c,v){ L.push(String(c).padStart(3)); L.push(String(v)); }
+
+  g(0,'SECTION'); g(2,'HEADER');
+  g(9,'$ACADVER'); g(1,'AC1015');
+  g(9,'$EXTMIN'); g(10,0); g(20,0); g(30,0);
+  g(9,'$EXTMAX'); g(10,100000); g(20,100000); g(30,0);
+  g(9,'$LUNITS'); g(70,2);
+  g(9,'$MEASUREMENT'); g(70,1);
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'CLASSES'); g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'TABLES');
+  g(0,'TABLE'); g(2,'LTYPE'); g(5,'5'); g(100,'AcDbSymbolTable'); g(70,1);
+  g(0,'LTYPE'); g(5,'14'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbLinetypeTableRecord');
+  g(2,'CONTINUOUS'); g(70,0); g(3,'Solid line'); g(72,65); g(73,0); g(40,0);
+  g(0,'ENDTAB');
+
+  g(0,'TABLE'); g(2,'LAYER'); g(5,'2'); g(100,'AcDbSymbolTable'); g(70,4);
+  var layers = [['SITE_BOUNDARY',1],['TABLE_OUTLINE',3],['PANEL_OUTLINE',5],['SETBACK',8],['ELECTRICAL_ROOM',1],['BESS_CONTAINER',4],['BESS_SKID',2],['BESS_CLEARANCE',9],['BESS_ROAD',7]];
+  for (var li=0; li<layers.length; li++) {
+    g(0,'LAYER'); g(5,(100+li).toString(16));
+    g(100,'AcDbSymbolTableRecord'); g(100,'AcDbLayerTableRecord');
+    g(2,layers[li][0]); g(70,0); g(62,layers[li][1]); g(6,'CONTINUOUS');
+  }
+  g(0,'ENDTAB');
+
+  g(0,'TABLE'); g(2,'APPID'); g(5,'9'); g(100,'AcDbSymbolTable'); g(70,1);
+  g(0,'APPID'); g(5,'12'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbRegAppTableRecord'); g(2,'ACAD'); g(70,0);
+  g(0,'ENDTAB');
+
+  g(0,'TABLE'); g(2,'BLOCK_RECORD'); g(5,'1'); g(100,'AcDbSymbolTable'); g(70,2);
+  g(0,'BLOCK_RECORD'); g(5,'1F'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbBlockTableRecord'); g(2,'*MODEL_SPACE');
+  g(0,'BLOCK_RECORD'); g(5,'1B'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbBlockTableRecord'); g(2,'*PAPER_SPACE');
+  g(0,'ENDTAB');
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'BLOCKS');
+  g(0,'BLOCK'); g(5,'20'); g(100,'AcDbEntity'); g(8,'0');
+  g(100,'AcDbBlockBegin'); g(2,'*MODEL_SPACE'); g(70,0); g(10,0); g(20,0); g(30,0); g(3,'*MODEL_SPACE'); g(1,'');
+  g(0,'ENDBLK'); g(5,'21'); g(100,'AcDbEntity'); g(8,'0'); g(100,'AcDbBlockEnd');
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'ENTITIES');
+  var h = 300;
+  function lw(pts, layer) {
+    g(0,'LWPOLYLINE'); g(5,(h++).toString(16));
+    g(100,'AcDbEntity'); g(8,layer);
+    g(100,'AcDbPolyline'); g(90,pts.length); g(70,1); g(43,0);
+    for (var i=0;i<pts.length;i++){ g(10,pts[i][0].toFixed(4)); g(20,pts[i][1].toFixed(4)); }
+  }
+  lw(orig, 'SITE_BOUNDARY');
+  lw(res.shrunk, 'SETBACK');
+  for (var ti=0; ti<res.tables.length; ti++) {
+    lw(res.tables[ti].outline, 'TABLE_OUTLINE');
+    for (var pi=0; pi<res.tables[ti].panels.length; pi++) {
+      lw(res.tables[ti].panels[pi], 'PANEL_OUTLINE');
+    }
+  }
+  var erP = erWorldPoly();
+  if (erP) {
+    // Write all polylines from block
+    var erPolys = erWorldPolys();
+    erPolys.forEach(function(pts) {
+      if (pts.length >= 2) lw(pts, 'ELECTRICAL_ROOM');
+    });
+    // Write all lines from block
+    var erLines = erWorldLines();
+    erLines.forEach(function(l) {
+      g(0,'LINE'); g(5,(h++).toString(16));
+      g(100,'AcDbEntity'); g(8,'ELECTRICAL_ROOM');
+      g(100,'AcDbLine');
+      g(10,l.x1.toFixed(4)); g(20,l.y1.toFixed(4)); g(30,0);
+      g(11,l.x2.toFixed(4)); g(21,l.y2.toFixed(4)); g(31,0);
+    });
+  }
+  // Write BESS units
+  bessUnits.forEach(function(u) {
+    var bu = bessUnitGeometry(u.cx, u.cy, u.angle);
+    lw(bu.cont1, 'BESS_CONTAINER');
+    lw(bu.cont2, 'BESS_CONTAINER');
+    lw(bu.skid,  'BESS_SKID');
+    lw(bu.clrBox,'BESS_CLEARANCE');
+    bu.roads.forEach(function(r){ lw(r,'BESS_ROAD'); });
+  });
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'OBJECTS');
+  g(0,'DICTIONARY'); g(5,'C'); g(100,'AcDbDictionary'); g(281,1); g(3,'ACAD_GROUP'); g(350,'D');
+  g(0,'DICTIONARY'); g(5,'D'); g(100,'AcDbDictionary'); g(281,1);
+  g(0,'ENDSEC');
+  g(0,'EOF');
+
+  return L.join('\r\n');
+}
+
+// ── PREVIEW ─────────────────────────────────────────────────────
+var previewScale = null;
+var zoomLevel = 1.0;
+
+function changeZoom(delta) {
+  zoomLevel = Math.max(0.25, Math.min(20, zoomLevel + delta));
+  document.getElementById('zoom-lbl').textContent = Math.round(zoomLevel*100) + '%';
+  if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+}
+
+function resetZoom() {
+  zoomLevel = 1.0;
+  panX = 0; panY = 0;
+  document.getElementById('zoom-lbl').textContent = '100%';
+  if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+}
+
+function drawPreview(res, orig) {
+  var wrap = document.getElementById('canvas-wrap');
+  var cv = document.getElementById('preview-canvas');
+  var W = wrap.offsetWidth || 280;
+  var H = Math.round(W * 0.75);
+  cv.width = W; cv.height = H;
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
+  var ctx = cv.getContext('2d');
+  ctx.fillStyle = '#1a2020'; ctx.fillRect(0,0,W,H);
+
+  var all = orig.concat(res.shrunk);
+  for (var i=0;i<res.tables.length;i++) {
+    for (var j=0;j<res.tables[i].outline.length;j++) all.push(res.tables[i].outline[j]);
+  }
+  var xs = all.map(function(p){return p[0];}), ys = all.map(function(p){return p[1];});
+  var mnx=Math.min.apply(null,xs), mxx=Math.max.apply(null,xs);
+  var mny=Math.min.apply(null,ys), mxy=Math.max.apply(null,ys);
+  var pad=24;
+  var baseSc = Math.min((W-pad*2)/(mxx-mnx||1),(H-pad*2)/(mxy-mny||1));
+  var sc = baseSc * zoomLevel;
+  var ox = pad + (W-pad*2-(mxx-mnx)*sc)/2 + panX;
+  var oy = pad + (H-pad*2-(mxy-mny)*sc)/2 + panY;
+
+  previewScale = { mnx:mnx, mny:mny, sc:sc, ox:ox, oy:oy, H:H };
+
+  function tp(p){ return [ox+(p[0]-mnx)*sc, H-(oy+(p[1]-mny)*sc)]; }
+
+  function dp(pts, stroke, fill, lw) {
+    if (!pts || !pts.length) return;
+    ctx.beginPath();
+    var s = tp(pts[0]); ctx.moveTo(s[0],s[1]);
+    for (var i=1;i<pts.length;i++){ var p=tp(pts[i]); ctx.lineTo(p[0],p[1]); }
+    ctx.closePath();
+    if (fill){ ctx.fillStyle=fill; ctx.fill(); }
+    ctx.strokeStyle=stroke; ctx.lineWidth=lw||1; ctx.stroke();
+  }
+
+  dp(orig,'#f55',null,1.5);
+  dp(res.shrunk,'#555',null,1);
+  for (var i=0;i<res.tables.length;i++){
+    for (var j=0;j<res.tables[i].panels.length;j++){
+      dp(res.tables[i].panels[j],'#4af','rgba(68,170,255,0.18)');
+    }
+    dp(res.tables[i].outline,'#4c8',null,1);
+  }
+
+  // Draw electrical room - full block geometry
+  if (electricalRoom) {
+    var erPolys = erWorldPolys();
+    var erLines = erWorldLines();
+    // Draw all polylines
+    erPolys.forEach(function(pts) {
+      if (!pts || pts.length < 2) return;
+      ctx.beginPath();
+      var s = tp(pts[0]); ctx.moveTo(s[0],s[1]);
+      for (var i=1;i<pts.length;i++){ var p=tp(pts[i]); ctx.lineTo(p[0],p[1]); }
+      ctx.strokeStyle = '#ff6432'; ctx.lineWidth = 1; ctx.stroke();
+    });
+    // Draw all lines
+    erLines.forEach(function(l) {
+      var p1=tp([l.x1,l.y1]), p2=tp([l.x2,l.y2]);
+      ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]);
+      ctx.strokeStyle = '#ff6432'; ctx.lineWidth = 0.5; ctx.stroke();
+    });
+    // Fill bounding box lightly
+    var erP = erWorldPoly();
+    if (erP) {
+      ctx.beginPath();
+      var s=tp(erP[0]); ctx.moveTo(s[0],s[1]);
+      for (var i=1;i<erP.length;i++){ var p=tp(erP[i]); ctx.lineTo(p[0],p[1]); }
+      ctx.closePath();
+      ctx.fillStyle='rgba(255,100,50,0.08)'; ctx.fill();
+    }
+    // Label
+    var erC = tp([electricalRoom.worldX, electricalRoom.worldY]);
+    ctx.fillStyle='#ff6432'; ctx.font='bold 10px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('חדר חשמל', erC[0], erC[1]);
+  }
+
+  // Draw BESS units
+  bessUnits.forEach(function(u) {
+    var g = bessUnitGeometry(u.cx, u.cy, u.angle);
+    // Roads
+    g.roads.forEach(function(pts) {
+      ctx.beginPath();
+      var s=tp(pts[0]); ctx.moveTo(s[0],s[1]);
+      for(var i=1;i<pts.length;i++){var p=tp(pts[i]);ctx.lineTo(p[0],p[1]);}
+      ctx.closePath();
+      ctx.fillStyle='rgba(180,160,100,0.25)'; ctx.fill();
+      ctx.strokeStyle='#b0a060'; ctx.lineWidth=0.5; ctx.stroke();
+    });
+    // Clearance box
+    var cb=g.clrBox;
+    ctx.beginPath();
+    var s=tp(cb[0]); ctx.moveTo(s[0],s[1]);
+    for(var i=1;i<cb.length;i++){var p=tp(cb[i]);ctx.lineTo(p[0],p[1]);}
+    ctx.closePath();
+    ctx.fillStyle='rgba(100,80,200,0.08)'; ctx.fill();
+    ctx.strokeStyle='#7060c0'; ctx.lineWidth=0.8; ctx.setLineDash([3,3]); ctx.stroke();
+    ctx.setLineDash([]);
+    // Containers
+    [g.cont1, g.cont2].forEach(function(pts) {
+      ctx.beginPath();
+      var s=tp(pts[0]); ctx.moveTo(s[0],s[1]);
+      for(var i=1;i<pts.length;i++){var p=tp(pts[i]);ctx.lineTo(p[0],p[1]);}
+      ctx.closePath();
+      ctx.fillStyle='rgba(80,60,180,0.35)'; ctx.fill();
+      ctx.strokeStyle='#5b3fa0'; ctx.lineWidth=1.5; ctx.stroke();
+    });
+    // SKID
+    var sk=g.skid;
+    ctx.beginPath();
+    var ss=tp(sk[0]); ctx.moveTo(ss[0],ss[1]);
+    for(var i=1;i<sk.length;i++){var p=tp(sk[i]);ctx.lineTo(p[0],p[1]);}
+    ctx.closePath();
+    ctx.fillStyle='rgba(255,180,0,0.5)'; ctx.fill();
+    ctx.strokeStyle='#c08000'; ctx.lineWidth=1.5; ctx.stroke();
+    // Label
+    var lc=tp([u.cx,u.cy]);
+    ctx.fillStyle='#5b3fa0'; ctx.font='bold 9px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('BESS', lc[0], lc[1]);
+  });
+
+  document.getElementById('er-card').style.display = 'block';
+  document.getElementById('bess-card').style.display = 'block';
+}
+
+// ── ELECTRICAL ROOM ─────────────────────────────────────────────
+function toggleErMode() {
+  erMode = !erMode;
+  var btn = document.getElementById('er-btn');
+  btn.classList.toggle('active', erMode);
+  btn.textContent = erMode ? '🖱 לחץ על גבול הפולגון...' : '📍 מקם חדר חשמל';
+}
+
+function clearEr() {
+  electricalRoom = null;
+  erMode = false;
+  document.getElementById('er-btn').classList.remove('active');
+  document.getElementById('er-btn').textContent = '📍 מקם חדר חשמל';
+  document.getElementById('er-placed').classList.remove('show');
+  if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+}
+
+function closestEdgePt(poly, mx, my) {
+  var best = null, bestDist = Infinity, bestSeg = 0;
+  for (var i = 0; i < poly.length; i++) {
+    var a = poly[i], b = poly[(i+1) % poly.length];
+    var dx = b[0]-a[0], dy = b[1]-a[1];
+    var len2 = dx*dx + dy*dy;
+    var t = len2 > 0 ? Math.max(0, Math.min(1, ((mx-a[0])*dx + (my-a[1])*dy) / len2)) : 0;
+    var px = a[0]+t*dx, py = a[1]+t*dy;
+    var d = Math.hypot(mx-px, my-py);
+    if (d < bestDist) { bestDist = d; best = [px, py]; bestSeg = i; }
+  }
+  return { pt: best, seg: bestSeg, dist: bestDist };
+}
+
+function placeErFromCanvas(canvasX, canvasY, poly, scaleInfo) {
+  // Convert canvas coords to world coords
+  var wx = scaleInfo.mnx + (canvasX - scaleInfo.ox) / scaleInfo.sc;
+  var wy = scaleInfo.mny + (scaleInfo.H - canvasY - scaleInfo.oy) / scaleInfo.sc;
+
+  var ew = parseFloat(document.getElementById('er-w').value) || 12;
+  var eh = parseFloat(document.getElementById('er-h').value) || 8;
+
+  var res = closestEdgePt(poly, wx, wy);
+  var pt = res.pt, seg = res.seg;
+
+  var a = poly[seg], b = poly[(seg+1) % poly.length];
+  var dx = b[0]-a[0], dy = b[1]-a[1];
+  var len = Math.hypot(dx, dy) || 1;
+  var nx = dy/len, ny = -dx/len;
+
+  // inward normal (toward centroid)
+  var c = centroid(poly);
+  var dot = (c[0]-pt[0])*nx + (c[1]-pt[1])*ny;
+  var inNx = dot > 0 ? nx : -nx;
+  var inNy = dot > 0 ? ny : -ny;
+
+  var angle = Math.atan2(dy, dx);
+
+  electricalRoom = {
+    worldX: pt[0] + inNx * eh/2,
+    worldY: pt[1] + inNy * eh/2,
+    w: ew, h: eh,
+    angle: angle,
+    inNx: inNx, inNy: inNy,
+    edgePt: pt
+  };
+
+  erMode = false;
+  document.getElementById('er-btn').classList.remove('active');
+  document.getElementById('er-btn').textContent = '📍 העבר חדר חשמל';
+  document.getElementById('er-placed').classList.add('show');
+
+  // Auto-recalc layout immediately
+  if (lastPoly) {
+    try {
+      var res = computeLayout(lastPoly);
+      lastRes = res;
+      var dxf = writeDxf(res, lastPoly);
+      resultBlob = new Blob([dxf], {type:'application/dxf'});
+      document.getElementById('r-tables').textContent = res.tables.length;
+      document.getElementById('r-panels').textContent = res.totalPanels;
+      document.getElementById('r-kw').textContent = res.kw.toFixed(1);
+      var rb = document.getElementById('result-box');
+      rb.classList.add('show');
+      rb.style.transition = 'background .15s';
+      rb.style.background = '#b5d9c5';
+      setTimeout(function(){ rb.style.background = ''; }, 400);
+      document.getElementById('er-placed').textContent = '✓ חדר חשמל מוקם — פריסה עודכנה אוטומטית';
+      drawPreview(res, lastPoly);
+      document.getElementById('preview-wrap').classList.add('show');
+    } catch(e) { if (lastRes) drawPreview(lastRes, lastPoly); }
+  } else {
+    if (lastRes) drawPreview(lastRes, lastPoly);
+  }
+}
+
+// Transform a point from block-local coords to world coords
+function erTransformPt(lx, ly) {
+  if (!electricalRoom) return [lx, ly];
+  var er = electricalRoom;
+  var cos = Math.cos(er.angle), sin = Math.sin(er.angle);
+  // Center the block on the placement point
+  var cx = lx - ER_BLOCK.w/2, cy = ly - ER_BLOCK.h/2;
+  return [
+    er.worldX + cx*cos - cy*sin,
+    er.worldY + cx*sin + cy*cos
+  ];
+}
+
+// Build rectangular polygon for electrical room in world coords (for exclusion)
+function erWorldPoly() {
+  if (!electricalRoom) return null;
+  var er = electricalRoom;
+  var W = ER_BLOCK.w, H = ER_BLOCK.h;
+  var cos = Math.cos(er.angle), sin = Math.sin(er.angle);
+  var corners = [[0,0],[W,0],[W,H],[0,H]];
+  // offset so the edge midpoint touches the boundary
+  return corners.map(function(c) {
+    var lx = c[0] - W/2, ly = c[1] - H/2;
+    return [er.worldX + lx*cos - ly*sin,
+            er.worldY + lx*sin + ly*cos];
+  });
+}
+
+// Get all block polylines in world coords
+function erWorldPolys() {
+  if (!electricalRoom || !ER_BLOCK) return [];
+  return ER_BLOCK.polys.map(function(p) {
+    return p.pts.map(function(pt) {
+      return erTransformPt(pt[0], pt[1]);
+    });
+  });
+}
+
+// Get all block lines in world coords
+function erWorldLines() {
+  if (!electricalRoom || !ER_BLOCK) return [];
+  return ER_BLOCK.lines.map(function(l) {
+    var p1 = erTransformPt(l.x1, l.y1);
+    var p2 = erTransformPt(l.x2, l.y2);
+    return {x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],layer:l.layer};
+  });
+}
+
+// ── MAIN ────────────────────────────────────────────────────────
+function runLayout() {
+  if (!selectedFile) return;
+  hideAll();
+  document.getElementById('spinner').classList.add('show');
+  document.getElementById('gen-btn').disabled = true;
+
+  setTimeout(function(){
+    try {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var text = e.target.result;
+          var poly = parseDxf(text);
+          lastPoly = poly;
+          var res  = computeLayout(poly);
+          lastRes = res;
+          var dxf  = writeDxf(res, poly);
+          resultBlob = new Blob([dxf], {type:'application/dxf'});
+
+          document.getElementById('r-tables').textContent = res.tables.length;
+          document.getElementById('r-panels').textContent = res.totalPanels;
+          document.getElementById('r-kw').textContent     = res.kw.toFixed(1);
+          document.getElementById('result-box').classList.add('show');
+          drawPreview(res, poly);
+          document.getElementById('preview-wrap').classList.add('show');
+        } catch(err) {
+          showErr(err.message || String(err));
+        } finally {
+          document.getElementById('spinner').classList.remove('show');
+          document.getElementById('gen-btn').disabled = false;
+        }
+      };
+      reader.onerror = function(){ showErr('שגיאה בקריאת הקובץ'); };
+      reader.readAsText(selectedFile, 'UTF-8');
+    } catch(err) {
+      showErr(err.message || String(err));
+      document.getElementById('spinner').classList.remove('show');
+      document.getElementById('gen-btn').disabled = false;
+    }
+  }, 50);
+}
+
+document.getElementById('dl-btn').addEventListener('click', function(){
+  if (!resultBlob) return;
+  var url = URL.createObjectURL(resultBlob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pv_layout.dxf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+function toggleBessEnabled(cb) {
+  document.getElementById('bess-body').style.display = cb.checked ? 'block' : 'none';
+  if (!cb.checked) { clearBess(); }
+}
+
+// ── PAN support ──────────────────────────────────────────────────
+var panX = 0, panY = 0;
+var isPanning = false, panStartX = 0, panStartY = 0;
+
+(function() {
+  var cv = document.getElementById('preview-canvas');
+
+  cv.addEventListener('mousedown', function(e) {
+    if (erMode) return;
+    isPanning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    cv.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (!isPanning) return;
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+  });
+
+  window.addEventListener('mouseup', function() {
+    if (isPanning) {
+      isPanning = false;
+      document.getElementById('preview-canvas').style.cursor = erMode ? 'crosshair' : 'grab';
+    }
+  });
+
+  cv.addEventListener('mousemove', function() {
+    if (!isPanning) cv.style.cursor = erMode ? 'crosshair' : 'grab';
+  });
+})();
+document.getElementById('preview-canvas').addEventListener('click', function(e) {
+  if (!erMode || !previewScale || !lastPoly) return;
+  var rect = this.getBoundingClientRect();
+  var scaleX = this.width / rect.width;
+  var cx = (e.clientX - rect.left) * scaleX;
+  var cy = (e.clientY - rect.top);
+  placeErFromCanvas(cx, cy, lastPoly, previewScale);
+});
+
+document.getElementById('preview-canvas').addEventListener('mousemove', function(e) {
+  if (!erMode) return;
+  this.style.cursor = 'crosshair';
+});
+document.getElementById('preview-canvas').addEventListener('mouseleave', function() {
+  this.style.cursor = 'default';
+});
+</script>
+</body>
+</html>
