@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PV Layout Tool</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#f0f2ee;--sur:#fff;--bdr:#dde0d8;--txt:#1c1f18;--mut:#6b6e64;--acc:#2a7d4f;--accl:#e6f4ec;--accd:#1f5e3a;--wrn:#b87000;--wrnl:#fdf3dc;--rad:10px;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;min-height:100vh;}
+header{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 2rem;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.logo{font-size:18px;font-weight:700;letter-spacing:-.4px;}
+.logo span{color:var(--acc);}
+.tag{font-size:11px;background:var(--accl);color:var(--acc);padding:3px 10px;border-radius:99px;font-weight:600;}
+.main{max-width:900px;margin:1.5rem auto;padding:0 1rem;display:grid;grid-template-columns:1fr 300px;gap:1.25rem;align-items:start;}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rad);padding:1.25rem;margin-bottom:1rem;}
+.ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--bdr);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.f{display:flex;flex-direction:column;gap:4px;}
+.f label{font-size:12px;color:var(--mut);font-weight:500;}
+.f input,.f select{height:34px;border:1px solid var(--bdr);border-radius:7px;padding:0 10px;font-size:13px;background:#fafaf8;color:var(--txt);}
+.f input:focus,.f select:focus{outline:none;border-color:var(--acc);}
+.f input:disabled{opacity:.35;cursor:not-allowed;}
+.hint{font-size:11px;color:var(--mut);}
+.rg{display:flex;gap:6px;margin-top:2px;}
+.rb{flex:1;height:33px;border:1px solid var(--bdr);border-radius:7px;background:#fafaf8;color:var(--mut);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s;user-select:none;}
+.rb.on{background:var(--accl);border-color:var(--acc);color:var(--acc);font-weight:700;}
+.sub{background:var(--accl);border:1px solid #b5d9c5;border-radius:8px;padding:.85rem;margin-top:.85rem;}
+.sub-t{font-size:11px;color:var(--accd);font-weight:700;margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em;}
+.wnote{font-size:11px;color:var(--wrn);background:var(--wrnl);border-radius:6px;padding:5px 9px;margin-top:5px;display:none;}
+.dv{border:none;border-top:1px solid var(--bdr);margin:1rem 0;}
+.eo{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--mut);cursor:pointer;padding:4px 0;}
+.eo input{margin-top:2px;accent-color:var(--acc);}
+.dwg{background:var(--wrnl);border:1px solid #e8c97a;border-radius:8px;padding:.85rem;margin-bottom:.85rem;}
+.dwg-t{font-size:11px;font-weight:700;color:var(--wrn);margin-bottom:8px;}
+.ds{display:flex;align-items:center;gap:8px;font-size:12px;color:#6b5500;margin-bottom:4px;}
+.sn{width:18px;height:18px;border-radius:50%;background:var(--wrn);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dwg-section-t{font-size:11px;font-weight:700;color:var(--accd);margin:8px 0 5px 0;}
+.dwg-divider{border:none;border-top:1px dashed #e8c97a;margin:8px 0;}
+.upz{border:2px dashed var(--bdr);border-radius:9px;padding:1.75rem 1rem;text-align:center;cursor:pointer;transition:all .15s;background:#fafaf8;}
+.upz:hover,.upz.over{border-color:var(--acc);background:var(--accl);}
+.upz-name{margin-top:8px;font-size:12px;font-weight:700;color:var(--acc);word-break:break-all;}
+#fi{display:none;}
+.gbtn{width:100%;height:44px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad);font-size:14px;font-weight:700;cursor:pointer;margin-top:1rem;transition:opacity .15s;}
+.gbtn:hover:not(:disabled){opacity:.88;}
+.gbtn:disabled{opacity:.35;cursor:not-allowed;}
+.spin-wrap{display:none;align-items:center;justify-content:center;gap:10px;padding:1.25rem;font-size:13px;color:var(--mut);}
+.spin-wrap.show{display:flex;}
+.spin{width:20px;height:20px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.res{display:none;background:var(--accl);border:1px solid #b5d9c5;border-radius:var(--rad);padding:1rem;margin-top:1rem;}
+.res.show{display:block;}
+.res-t{font-size:11px;font-weight:700;color:var(--accd);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px;}
+.stat{background:#fff;border-radius:7px;padding:8px;text-align:center;border:1px solid #d0e8d8;}
+.sv{font-size:20px;font-weight:700;color:var(--acc);}
+.sl{font-size:10px;color:var(--mut);margin-top:1px;}
+.dlbtn{width:100%;height:38px;background:var(--acc);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
+.dlbtn:hover{opacity:.88;}
+.err{display:none;background:#fdecea;border:1px solid #f5c0bc;border-radius:var(--rad);padding:.85rem;font-size:12px;color:#b03030;margin-top:1rem;line-height:1.6;white-space:pre-wrap;}
+.err.show{display:block;}
+.pvw{margin-top:1rem;display:none;}
+.pvw.show{display:block;}
+.pvw-t{font-size:11px;color:var(--mut);font-weight:600;margin-bottom:6px;}
+.pvw-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.pvw-toolbar span{font-size:11px;color:var(--mut);flex:1;}
+.zoom-btn{width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:#fafaf8;color:var(--txt);font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.zoom-btn:hover{background:var(--accl);border-color:var(--acc);}
+.zoom-lbl{font-size:11px;color:var(--mut);min-width:36px;text-align:center;}
+.canvas-wrap{overflow:hidden;border:1px solid var(--bdr);border-radius:7px;background:#1a2020;position:relative;}
+canvas{display:block;background:#1a2020;}
+
+.er-card{margin-top:1rem;}
+.er-btn{width:100%;height:38px;background:#fff;color:var(--acc);border:1.5px solid var(--acc);border-radius:var(--rad);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;}
+.er-btn:hover{background:var(--accl);}
+.er-btn.active{background:var(--acc);color:#fff;}
+.er-dims{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.er-hint{font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5;}
+.er-placed{font-size:11px;color:var(--acc);font-weight:600;margin-top:6px;display:none;}
+.er-placed.show{display:block;}
+.bess-card{margin-top:1rem;}
+.bess-unit{background:#f5f0ff;border:1px solid #c9b8f0;border-radius:8px;padding:.75rem;margin-top:.75rem;}
+.bess-unit-t{font-size:11px;font-weight:700;color:#5b3fa0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
+.bess-road{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap;}
+.bess-road-btn{flex:1;min-width:28px;height:28px;border:1px solid #c9b8f0;border-radius:5px;background:#fff;color:#5b3fa0;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.bess-road-btn.on{background:#5b3fa0;color:#fff;border-color:#5b3fa0;}
+.bess-placed{font-size:11px;color:#5b3fa0;font-weight:600;margin-top:6px;display:none;}
+.bess-placed.show{display:block;}
+@media(max-width:640px){.main{grid-template-columns:1fr;}.g3{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PV <span>Layout</span></div>
+  <div class="tag">פריסת פאנלים סולאריים</div>
+</header>
+
+<div class="main">
+  <div>
+
+    <div class="card">
+      <div class="ct">טכנולוגיית התקנה</div>
+      <div class="rg" id="tech-row">
+        <div class="rb on" onclick="setTech('fixed',this)">Fixed Tilt</div>
+        <div class="rb" onclick="setTech('sat',this)">Single Axis Tracker (SAT)</div>
+      </div>
+      <div id="sat-box" class="sub" style="display:none;">
+        <div class="sub-t">התקנה על ציר</div>
+        <div class="rg" id="trk-row">
+          <div class="rb on" onclick="setTrk('1p',this)">1P</div>
+          <div class="rb" onclick="setTrk('2p',this)">2P</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">פרמטרי פאנל</div>
+      <div class="g3">
+        <div class="f"><label>אורך (מ"מ)</label><input type="number" id="panel_h" value="2278"/></div>
+        <div class="f"><label>רוחב (מ"מ)</label><input type="number" id="panel_w" value="1134"/></div>
+        <div class="f"><label>הספק (Wp)</label><input type="number" id="panel_wp" value="580"/></div>
+      </div>
+      <div class="dv"></div>
+      <div class="f"><label>אוריינטציה</label>
+        <div class="rg" id="orient-row" style="margin-top:3px;">
+          <div class="rb on" onclick="setOrient('portrait',this)">Portrait (אנכי)</div>
+          <div class="rb" onclick="setOrient('landscape',this)">Landscape (אופקי)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">הגדרת בלוק שולחן</div>
+      <div class="f" style="margin-bottom:10px;">
+        <label>פאנלים לסטרינג</label>
+        <div class="rg" id="pps-row">
+          <div class="rb on" onclick="setPPS(28,this)">28 פאנלים</div>
+          <div class="rb" onclick="setPPS(27,this)">27 פאנלים</div>
+        </div>
+      </div>
+      <div id="block-preview" style="font-size:11px;color:var(--mut);background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:8px;line-height:1.8;"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct">פרמטרי מערך</div>
+      <div class="f" style="margin-bottom:10px;">
+        <label>כיוון פריסה</label>
+        <div class="rg" id="align-row" style="margin-top:3px;">
+          <div class="rb on" onclick="setAlign('south',this)">True South — דרום אמיתי</div>
+          <div class="rb" onclick="setAlign('polygon',this)">לפי הפולגון — Polygon Aligned</div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Tilt (°)</label><input type="number" id="tilt" value="20" min="0" max="90"/>
+          <div class="wnote" id="tilt-note">לא רלוונטי בטראקר</div></div>
+        <div class="f" id="azimuth-wrap">
+          <label>Azimuth (°)</label>
+          <input type="number" id="azimuth" value="180"/>
+          <span class="hint">180° = דרום</span>
+        </div>
+        <div class="f"><label>Pitch - מרכז למרכז (מ')</label><input type="number" id="row_spacing" value="6.5" step="0.1"/></div>
+        <div class="f"><label>Setback (מ')</label><input type="number" id="setback" value="5" step="0.5"/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">טיפול בקצוות פולגון</div>
+      <label class="eo"><input type="radio" name="edge" value="partial" checked/> שולחן חלקי בקצה</label>
+      <label class="eo"><input type="radio" name="edge" value="full"/> שולחנות שלמים בלבד</label>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="ct">קובץ גבולות המתקן</div>
+
+      <div class="dwg">
+        <div class="dwg-t">כיצד להכין את קובץ הגבולות?</div>
+        <div class="dwg-section-t">יש לך קובץ DWG?</div>
+        <div class="ds"><span class="sn">1</span><span>פתח את הקובץ באוטוקאד</span></div>
+        <div class="ds"><span class="sn">2</span><span>לחץ על תפריט ← <strong>Save As</strong> ← <strong>AutoCAD DXF</strong></span></div>
+        <div class="ds"><span class="sn">3</span><span>בחר גרסה: <strong>AutoCAD 2010 DXF</strong></span></div>
+        <div class="ds"><span class="sn">4</span><span>שמור והעלה את הקובץ כאן</span></div>
+        <div class="dwg-divider"></div>
+        <div class="dwg-section-t">אין AutoCAD? המרה אונליין חינמית:</div>
+        <div class="ds"><span class="sn">1</span><span>נכנס ל־ <a href="https://cloudconvert.com/dwg-to-dxf" target="_blank" style="color:var(--accd);font-weight:600;">cloudconvert.com/dwg-to-dxf</a></span></div>
+        <div class="ds"><span class="sn">2</span><span>בחר את קובץ ה-DWG ← לחץ <strong>Convert</strong></span></div>
+        <div class="ds"><span class="sn">3</span><span>הורד את ה-DXF והעלה אותו כאן</span></div>
+      </div>
+
+      <div class="upz" id="drop-zone" onclick="document.getElementById('fi').click()">
+        <div style="font-size:30px;margin-bottom:6px;">&#128193;</div>
+        <div style="font-size:12px;color:var(--mut);line-height:1.5;">גרור קובץ <strong>DXF</strong> לכאן<br/>או לחץ לבחירה</div>
+        <div class="upz-name" id="file-name"></div>
+      </div>
+      <input type="file" id="fi" accept=".dxf,.DXF"/>
+
+      <button class="gbtn" id="gen-btn" onclick="runLayout()" disabled>צור פריסה &larr;</button>
+
+      <div class="spin-wrap" id="spinner"><div class="spin"></div> מחשב פריסה...</div>
+
+      <div class="res" id="result-box">
+        <div class="res-t">&#10003; פריסה הושלמה</div>
+        <div class="stats">
+          <div class="stat"><div class="sv" id="r-tables">-</div><div class="sl">שולחנות</div></div>
+          <div class="stat"><div class="sv" id="r-panels">-</div><div class="sl">פאנלים</div></div>
+          <div class="stat"><div class="sv" id="r-kw">-</div><div class="sl">kWp</div></div>
+        </div>
+        <button class="dlbtn" id="dl-btn">&#11015; הורד DXF</button>
+      </div>
+
+      <div class="err" id="error-box"></div>
+
+      <div class="pvw" id="preview-wrap">
+        <div class="pvw-toolbar">
+          <span class="pvw-t">תצוגה מקדימה</span>
+          <button class="zoom-btn" onclick="changeZoom(-0.25)" title="הקטן">−</button>
+          <span class="zoom-lbl" id="zoom-lbl">100%</span>
+          <button class="zoom-btn" onclick="changeZoom(0.25)" title="הגדל">+</button>
+          <button class="zoom-btn" onclick="resetZoom()" title="איפוס זום" style="width:auto;padding:0 8px;font-size:11px;">⌂</button>
+        </div>
+        <div class="canvas-wrap" id="canvas-wrap">
+          <canvas id="preview-canvas" height="300"></canvas>
+        </div>
+      </div>
+
+      <!-- חדר חשמל -->
+      <div class="card er-card" id="er-card" style="display:none;">
+        <div class="ct">חדר חשמל</div>
+        <div class="er-dims">
+          <div class="f"><label>רוחב (מ')</label><input type="number" id="er-w" value="12" min="2" max="50" step="0.5"/></div>
+          <div class="f"><label>אורך (מ')</label><input type="number" id="er-h" value="8" min="2" max="50" step="0.5"/></div>
+        </div>
+        <div class="er-hint">לחץ על כפתור, ואז לחץ על גבול הפולגון בתצוגה המקדימה למיקום החדר</div>
+        <button class="er-btn" id="er-btn" onclick="toggleErMode()" style="margin-top:10px;">📍 מקם חדר חשמל</button>
+        <div class="er-placed" id="er-placed">✓ חדר חשמל מוקם — הפעל שוב "צור פריסה" לעדכון</div>
+        <button class="er-btn" id="er-clear" onclick="clearEr()" style="margin-top:6px;border-color:var(--bdr);color:var(--mut);">✕ הסר חדר חשמל</button>
+      </div>
+
+      <!-- BESS -->
+      <div class="card bess-card" id="bess-card" style="display:none;">
+        <div class="ct">אגירת אנרגיה — BESS</div>
+
+        <!-- Toggle יש/אין BESS -->
+        <label class="eo" style="margin-bottom:10px;">
+          <input type="checkbox" id="bess-enabled" onchange="toggleBessEnabled(this)" style="accent-color:#5b3fa0;margin-top:2px;"/>
+          <span style="font-weight:600;color:#5b3fa0;">פרויקט כולל אגירת אנרגיה</span>
+        </label>
+
+        <div id="bess-body" style="display:none;">
+          <div class="f" style="margin-bottom:10px;">
+            <label>סוג צימוד</label>
+            <div class="rg" id="bess-coupling-row">
+              <div class="rb on" onclick="setBessCoupling('ac',this)">AC Coupling</div>
+              <div class="rb" onclick="setBessCoupling('dc',this)">DC Coupling</div>
+            </div>
+          </div>
+          <div class="f" style="margin-bottom:10px;">
+            <label>כמות יחידות BESS</label>
+            <input type="number" id="bess-count" value="1" min="1" max="10" step="1"/>
+          </div>
+          <div class="bess-unit">
+            <div class="bess-unit-t">מידות יחידה</div>
+            <div class="g2">
+              <div class="f"><label>רוחב מכולה (מ')</label><input type="number" id="bess-cont-w" value="5.1" step="0.1"/></div>
+              <div class="f"><label>אורך מכולה (מ')</label><input type="number" id="bess-cont-l" value="12.5" step="0.1"/></div>
+            </div>
+            <div class="g2" style="margin-top:8px;">
+              <div class="f"><label>רוחב SKID (מ')</label><input type="number" id="bess-skid-w" value="2" step="0.1"/></div>
+              <div class="f"><label>אורך SKID (מ')</label><input type="number" id="bess-skid-l" value="12" step="0.1"/></div>
+            </div>
+            <div class="g2" style="margin-top:8px;">
+              <div class="f"><label>פינוי מכולה (מ')</label><input type="number" id="bess-clear" value="3.5" step="0.5"/></div>
+              <div class="f"><label>פינוי SKID (מ')</label><input type="number" id="bess-skid-clear" value="0.5" step="0.1"/></div>
+            </div>
+          </div>
+          <div class="bess-unit">
+            <div class="bess-unit-t">כביש גישה — רוחב 5 מ'</div>
+            <div style="font-size:11px;color:var(--mut);margin-bottom:8px;">בחר מאיזה צדדים:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button class="bess-road-btn on" id="bess-road-top" onclick="toggleRoad('top',this)">↑ צפון</button>
+              <button class="bess-road-btn on" id="bess-road-bot" onclick="toggleRoad('bot',this)">↓ דרום</button>
+              <button class="bess-road-btn" id="bess-road-left" onclick="toggleRoad('left',this)">← מערב</button>
+              <button class="bess-road-btn on" id="bess-road-right" onclick="toggleRoad('right',this)">→ מזרח</button>
+            </div>
+          </div>
+          <button class="er-btn" onclick="placeBess()" style="margin-top:10px;border-color:#5b3fa0;color:#5b3fa0;">⚡ הצב BESS</button>
+          <div class="bess-placed" id="bess-placed">✓ BESS מוצב — פריסה עודכנה</div>
+          <button class="er-btn" onclick="clearBess()" style="margin-top:6px;border-color:var(--bdr);color:var(--mut);">✕ הסר BESS</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+var tech = 'fixed';
+var orient = 'portrait';
+var trk = '1p';
+var selectedFile = null;
+var resultBlob = null;
+
+// ── BLOCK LIBRARY ─────────────────────────────────────────────
+var BLOCK_LIBRARY = [{"name":"SAT_1P_1S_28P","tech":"SAT","tracker_type":"1P","strings":1,"panels_per_string":28,"total_panels":28,"w":2.384,"h":39.9342,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[2.384,39.9342],[2.384,0.0],[0.0,0.0],[0.0,39.9342]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[2.384,39.9342],[2.384,1.0508],[0.0,1.0508],[0.0,39.9342]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[2.384,1.0812],[2.384,0.0],[0.0,0.0],[0.0,1.0812]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,31.7468],[0.0,33.0498],[2.384,33.0498],[2.384,31.7468],[0.0,31.7468]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,31.7818],[0.035,33.0148],[2.349,33.0148],[2.349,31.7818]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,33.0698],[0.0,34.3728],[2.384,34.3728],[2.384,33.0698],[0.0,33.0698]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,34.3928],[0.0,35.6958],[2.384,35.6958],[2.384,34.3928],[0.0,34.3928]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,35.7158],[0.0,37.0188],[2.384,37.0188],[2.384,35.7158],[0.0,35.7158]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,37.0388],[0.0,38.3418],[2.384,38.3418],[2.384,37.0388],[0.0,37.0388]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,33.1048],[0.035,34.3378],[2.349,34.3378],[2.349,33.1048]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,34.4278],[0.035,35.6608],[2.349,35.6608],[2.349,34.4278]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,35.7508],[0.035,36.9838],[2.349,36.9838],[2.349,35.7508]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,37.0738],[0.035,38.3068],[2.349,38.3068],[2.349,37.0738]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,38.5292],[0.0,39.8322],[2.384,39.8322],[2.384,38.5292],[0.0,38.5292]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,38.5642],[0.035,39.7972],[2.349,39.7972],[2.349,38.5642]]}]},{"name":"SAT_1P_2S_28P","tech":"SAT","tracker_type":"1P","strings":2,"panels_per_string":28,"total_panels":56,"w":2.384,"h":77.7364,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,77.7364],[2.384,77.7364],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,38.8834],[2.384,38.8834],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,38.853],[0.0,77.7364],[2.384,77.7364],[2.384,38.853]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,69.5497],[0.0,70.8527],[2.384,70.8527],[2.384,69.5497],[0.0,69.5497]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,69.5847],[0.035,70.8177],[2.349,70.8177],[2.349,69.5847]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,70.8727],[0.0,72.1757],[2.384,72.1757],[2.384,70.8727],[0.0,70.8727]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,72.1957],[0.0,73.4987],[2.384,73.4987],[2.384,72.1957],[0.0,72.1957]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,73.5187],[0.0,74.8217],[2.384,74.8217],[2.384,73.5187],[0.0,73.5187]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,74.8417],[0.0,76.1447],[2.384,76.1447],[2.384,74.8417],[0.0,74.8417]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,70.9077],[0.035,72.1407],[2.349,72.1407],[2.349,70.9077]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,72.2307],[0.035,73.4637],[2.349,73.4637],[2.349,72.2307]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,73.5537],[0.035,74.7867],[2.349,74.7867],[2.349,73.5537]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,74.8767],[0.035,76.1097],[2.349,76.1097],[2.349,74.8767]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,76.3321],[0.0,77.6351],[2.384,77.6351],[2.384,76.3321],[0.0,76.3321]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,76.3671],[0.035,77.6001],[2.349,77.6001],[2.349,76.3671]]}]},{"name":"SAT_1P_3S_28P","tech":"SAT","tracker_type":"1P","strings":3,"panels_per_string":28,"total_panels":84,"w":2.384,"h":115.45,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,115.45],[2.384,115.45],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,57.7402],[2.384,57.7402],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,57.7098],[0.0,115.45],[2.384,115.45],[2.384,57.7098]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,107.2633],[0.0,108.5663],[2.384,108.5663],[2.384,107.2633],[0.0,107.2633]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,107.2983],[0.035,108.5313],[2.349,108.5313],[2.349,107.2983]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,108.5863],[0.0,109.8893],[2.384,109.8893],[2.384,108.5863],[0.0,108.5863]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,109.9093],[0.0,111.2123],[2.384,111.2123],[2.384,109.9093],[0.0,109.9093]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,111.2323],[0.0,112.5353],[2.384,112.5353],[2.384,111.2323],[0.0,111.2323]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,112.5553],[0.0,113.8583],[2.384,113.8583],[2.384,112.5553],[0.0,112.5553]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,108.6213],[0.035,109.8543],[2.349,109.8543],[2.349,108.6213]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,109.9443],[0.035,111.1773],[2.349,111.1773],[2.349,109.9443]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,111.2673],[0.035,112.5003],[2.349,112.5003],[2.349,111.2673]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,112.5903],[0.035,113.8233],[2.349,113.8233],[2.349,112.5903]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,114.0457],[0.0,115.3487],[2.384,115.3487],[2.384,114.0457],[0.0,114.0457]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,114.0807],[0.035,115.3137],[2.349,115.3137],[2.349,114.0807]]}]},{"name":"SAT_1P_4S_28P","tech":"SAT","tracker_type":"1P","strings":4,"panels_per_string":28,"total_panels":112,"w":2.384,"h":152.6614,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,152.6614],[2.384,152.6614],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,144.4747],[0.0,145.7777],[2.384,145.7777],[2.384,144.4747],[0.0,144.4747]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,144.5097],[0.035,145.7427],[2.349,145.7427],[2.349,144.5097]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,145.7977],[0.0,147.1007],[2.384,147.1007],[2.384,145.7977],[0.0,145.7977]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,147.1207],[0.0,148.4237],[2.384,148.4237],[2.384,147.1207],[0.0,147.1207]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,148.4437],[0.0,149.7467],[2.384,149.7467],[2.384,148.4437],[0.0,148.4437]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,149.7667],[0.0,151.0697],[2.384,151.0697],[2.384,149.7667],[0.0,149.7667]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,145.8327],[0.035,147.0657],[2.349,147.0657],[2.349,145.8327]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,147.1557],[0.035,148.3887],[2.349,148.3887],[2.349,147.1557]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,148.4787],[0.035,149.7117],[2.349,149.7117],[2.349,148.4787]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,149.8017],[0.035,151.0347],[2.349,151.0347],[2.349,149.8017]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,151.2571],[0.0,152.5601],[2.384,152.5601],[2.384,151.2571],[0.0,151.2571]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.035,151.2921],[0.035,152.5251],[2.349,152.5251],[2.349,151.2921]]}]},{"name":"SAT_2P_2S_27P","tech":"SAT","tracker_type":"2P","strings":2,"panels_per_string":27,"total_panels":54,"w":31.728,"h":4.696,"polys":[{"layer":"GA_Component","pts":[[0.12,4.696],[1.254,4.696],[1.254,2.418],[0.12,2.418]]},{"layer":"GA_Component","pts":[[0.12,2.278],[1.254,2.278],[1.254,0.0],[0.12,0.0]]},{"layer":"GA_Component","pts":[[1.268,4.696],[2.402,4.696],[2.402,2.418],[1.268,2.418]]},{"layer":"GA_Component","pts":[[1.268,2.278],[2.402,2.278],[2.402,0.0],[1.268,0.0]]},{"layer":"GA_Component","pts":[[2.416,4.696],[3.55,4.696],[3.55,2.418],[2.416,2.418]]},{"layer":"GA_Component","pts":[[2.416,2.278],[3.55,2.278],[3.55,0.0],[2.416,0.0]]},{"layer":"GA_Component","pts":[[3.564,4.696],[4.698,4.696],[4.698,2.418],[3.564,2.418]]},{"layer":"GA_Component","pts":[[3.564,2.278],[4.698,2.278],[4.698,0.0],[3.564,0.0]]},{"layer":"GA_Component","pts":[[4.712,4.696],[5.846,4.696],[5.846,2.418],[4.712,2.418]]},{"layer":"GA_Component","pts":[[4.712,2.278],[5.846,2.278],[5.846,0.0],[4.712,0.0]]},{"layer":"GA_Component","pts":[[5.86,4.696],[6.994,4.696],[6.994,2.418],[5.86,2.418]]},{"layer":"GA_Component","pts":[[5.86,2.278],[6.994,2.278],[6.994,0.0],[5.86,0.0]]},{"layer":"GA_Component","pts":[[7.008,4.696],[8.142,4.696],[8.142,2.418],[7.008,2.418]]},{"layer":"GA_Component","pts":[[7.008,2.278],[8.142,2.278],[8.142,0.0],[7.008,0.0]]},{"layer":"GA_Component","pts":[[8.156,4.696],[9.29,4.696],[9.29,2.418],[8.156,2.418]]},{"layer":"GA_Component","pts":[[8.156,2.278],[9.29,2.278],[9.29,0.0],[8.156,0.0]]},{"layer":"GA_Component","pts":[[9.304,4.696],[10.438,4.696],[10.438,2.418],[9.304,2.418]]},{"layer":"GA_Component","pts":[[9.304,2.278],[10.438,2.278],[10.438,0.0],[9.304,0.0]]},{"layer":"GA_Component","pts":[[10.452,4.696],[11.586,4.696],[11.586,2.418],[10.452,2.418]]},{"layer":"GA_Component","pts":[[10.452,2.278],[11.586,2.278],[11.586,0.0],[10.452,0.0]]},{"layer":"GA_Component","pts":[[11.6,4.696],[12.734,4.696],[12.734,2.418],[11.6,2.418]]},{"layer":"GA_Component","pts":[[11.6,2.278],[12.734,2.278],[12.734,0.0],[11.6,0.0]]},{"layer":"GA_Component","pts":[[12.748,4.696],[13.882,4.696],[13.882,2.418],[12.748,2.418]]},{"layer":"GA_Component","pts":[[12.748,2.278],[13.882,2.278],[13.882,0.0],[12.748,0.0]]},{"layer":"GA_Component","pts":[[13.896,4.696],[15.03,4.696],[15.03,2.418],[13.896,2.418]]},{"layer":"GA_Component","pts":[[13.896,2.278],[15.03,2.278],[15.03,0.0],[13.896,0.0]]},{"layer":"GA_Component","pts":[[15.044,4.696],[16.178,4.696],[16.178,2.418],[15.044,2.418]]},{"layer":"GA_Component","pts":[[15.044,2.278],[16.178,2.278],[16.178,0.0],[15.044,0.0]]},{"layer":"GA_Component","pts":[[16.192,4.696],[17.326,4.696],[17.326,2.418],[16.192,2.418]]},{"layer":"GA_Component","pts":[[16.192,2.278],[17.326,2.278],[17.326,0.0],[16.192,0.0]]},{"layer":"GA_Component","pts":[[17.34,4.696],[18.474,4.696],[18.474,2.418],[17.34,2.418]]},{"layer":"GA_Component","pts":[[17.34,2.278],[18.474,2.278],[18.474,0.0],[17.34,0.0]]},{"layer":"GA_Component","pts":[[18.488,4.696],[19.622,4.696],[19.622,2.418],[18.488,2.418]]},{"layer":"GA_Component","pts":[[18.488,2.278],[19.622,2.278],[19.622,0.0],[18.488,0.0]]},{"layer":"GA_Component","pts":[[19.636,4.696],[20.77,4.696],[20.77,2.418],[19.636,2.418]]},{"layer":"GA_Component","pts":[[19.636,2.278],[20.77,2.278],[20.77,0.0],[19.636,0.0]]},{"layer":"GA_Component","pts":[[20.784,4.696],[21.918,4.696],[21.918,2.418],[20.784,2.418]]},{"layer":"GA_Component","pts":[[20.784,2.278],[21.918,2.278],[21.918,0.0],[20.784,0.0]]},{"layer":"GA_Component","pts":[[22.438,4.696],[23.572,4.696],[23.572,2.418],[22.438,2.418]]},{"layer":"GA_Component","pts":[[22.438,2.278],[23.572,2.278],[23.572,0.0],[22.438,0.0]]},{"layer":"GA_Component","pts":[[23.586,4.696],[24.72,4.696],[24.72,2.418],[23.586,2.418]]},{"layer":"GA_Component","pts":[[23.586,2.278],[24.72,2.278],[24.72,0.0],[23.586,0.0]]},{"layer":"GA_Component","pts":[[24.734,4.696],[25.868,4.696],[25.868,2.418],[24.734,2.418]]},{"layer":"GA_Component","pts":[[24.734,2.278],[25.868,2.278],[25.868,0.0],[24.734,0.0]]},{"layer":"GA_Component","pts":[[25.882,4.696],[27.016,4.696],[27.016,2.418],[25.882,2.418]]},{"layer":"GA_Component","pts":[[25.882,2.278],[27.016,2.278],[27.016,0.0],[25.882,0.0]]},{"layer":"GA_Component","pts":[[27.03,4.696],[28.164,4.696],[28.164,2.418],[27.03,2.418]]},{"layer":"GA_Component","pts":[[27.03,2.278],[28.164,2.278],[28.164,0.0],[27.03,0.0]]},{"layer":"GA_Component","pts":[[28.178,4.696],[29.312,4.696],[29.312,2.418],[28.178,2.418]]},{"layer":"GA_Component","pts":[[28.178,2.278],[29.312,2.278],[29.312,0.0],[28.178,0.0]]},{"layer":"GA_Component","pts":[[29.326,4.696],[30.46,4.696],[30.46,2.418],[29.326,2.418]]},{"layer":"GA_Component","pts":[[29.326,2.278],[30.46,2.278],[30.46,0.0],[29.326,0.0]]},{"layer":"GA_Component","pts":[[30.474,4.696],[31.608,4.696],[31.608,2.418],[30.474,2.418]]},{"layer":"GA_Component","pts":[[30.474,2.278],[31.608,2.278],[31.608,0.0],[30.474,0.0]]},{"layer":"GA_Component","pts":[[0.0,2.418],[8.913,2.418],[8.913,2.278],[0.0,2.278]]},{"layer":"GA_Component","pts":[[9.043,2.418],[14.643,2.418],[14.643,2.278],[9.043,2.278]]},{"layer":"GA_Component","pts":[[14.693,2.418],[22.113,2.418],[22.113,2.278],[14.693,2.278]]},{"layer":"GA_Component","pts":[[22.243,2.418],[31.728,2.418],[31.728,2.278],[22.243,2.278]]}]},{"name":"SAT_2P_4S_27P","tech":"SAT","tracker_type":"2P","strings":4,"panels_per_string":27,"total_panels":108,"w":62.724,"h":4.696,"polys":[{"layer":"GA_Component","pts":[[0.12,4.696],[1.254,4.696],[1.254,2.418],[0.12,2.418]]},{"layer":"GA_Component","pts":[[0.12,2.278],[1.254,2.278],[1.254,0.0],[0.12,0.0]]},{"layer":"GA_Component","pts":[[1.268,4.696],[2.402,4.696],[2.402,2.418],[1.268,2.418]]},{"layer":"GA_Component","pts":[[1.268,2.278],[2.402,2.278],[2.402,0.0],[1.268,0.0]]},{"layer":"GA_Component","pts":[[2.416,4.696],[3.55,4.696],[3.55,2.418],[2.416,2.418]]},{"layer":"GA_Component","pts":[[2.416,2.278],[3.55,2.278],[3.55,0.0],[2.416,0.0]]},{"layer":"GA_Component","pts":[[3.564,4.696],[4.698,4.696],[4.698,2.418],[3.564,2.418]]},{"layer":"GA_Component","pts":[[3.564,2.278],[4.698,2.278],[4.698,0.0],[3.564,0.0]]},{"layer":"GA_Component","pts":[[4.712,4.696],[5.846,4.696],[5.846,2.418],[4.712,2.418]]},{"layer":"GA_Component","pts":[[4.712,2.278],[5.846,2.278],[5.846,0.0],[4.712,0.0]]},{"layer":"GA_Component","pts":[[5.86,4.696],[6.994,4.696],[6.994,2.418],[5.86,2.418]]},{"layer":"GA_Component","pts":[[5.86,2.278],[6.994,2.278],[6.994,0.0],[5.86,0.0]]},{"layer":"GA_Component","pts":[[7.008,4.696],[8.142,4.696],[8.142,2.418],[7.008,2.418]]},{"layer":"GA_Component","pts":[[7.008,2.278],[8.142,2.278],[8.142,0.0],[7.008,0.0]]},{"layer":"GA_Component","pts":[[8.156,4.696],[9.29,4.696],[9.29,2.418],[8.156,2.418]]},{"layer":"GA_Component","pts":[[8.156,2.278],[9.29,2.278],[9.29,0.0],[8.156,0.0]]},{"layer":"GA_Component","pts":[[9.304,4.696],[10.438,4.696],[10.438,2.418],[9.304,2.418]]},{"layer":"GA_Component","pts":[[9.304,2.278],[10.438,2.278],[10.438,0.0],[9.304,0.0]]},{"layer":"GA_Component","pts":[[10.452,4.696],[11.586,4.696],[11.586,2.418],[10.452,2.418]]},{"layer":"GA_Component","pts":[[10.452,2.278],[11.586,2.278],[11.586,0.0],[10.452,0.0]]},{"layer":"GA_Component","pts":[[11.6,4.696],[12.734,4.696],[12.734,2.418],[11.6,2.418]]},{"layer":"GA_Component","pts":[[11.6,2.278],[12.734,2.278],[12.734,0.0],[11.6,0.0]]},{"layer":"GA_Component","pts":[[12.748,4.696],[13.882,4.696],[13.882,2.418],[12.748,2.418]]},{"layer":"GA_Component","pts":[[12.748,2.278],[13.882,2.278],[13.882,0.0],[12.748,0.0]]},{"layer":"GA_Component","pts":[[13.896,4.696],[15.03,4.696],[15.03,2.418],[13.896,2.418]]},{"layer":"GA_Component","pts":[[13.896,2.278],[15.03,2.278],[15.03,0.0],[13.896,0.0]]},{"layer":"GA_Component","pts":[[15.044,4.696],[16.178,4.696],[16.178,2.418],[15.044,2.418]]},{"layer":"GA_Component","pts":[[15.044,2.278],[16.178,2.278],[16.178,0.0],[15.044,0.0]]},{"layer":"GA_Component","pts":[[16.192,4.696],[17.326,4.696],[17.326,2.418],[16.192,2.418]]},{"layer":"GA_Component","pts":[[16.192,2.278],[17.326,2.278],[17.326,0.0],[16.192,0.0]]},{"layer":"GA_Component","pts":[[17.34,4.696],[18.474,4.696],[18.474,2.418],[17.34,2.418]]},{"layer":"GA_Component","pts":[[17.34,2.278],[18.474,2.278],[18.474,0.0],[17.34,0.0]]},{"layer":"GA_Component","pts":[[18.488,4.696],[19.622,4.696],[19.622,2.418],[18.488,2.418]]},{"layer":"GA_Component","pts":[[18.488,2.278],[19.622,2.278],[19.622,0.0],[18.488,0.0]]},{"layer":"GA_Component","pts":[[19.636,4.696],[20.77,4.696],[20.77,2.418],[19.636,2.418]]},{"layer":"GA_Component","pts":[[19.636,2.278],[20.77,2.278],[20.77,0.0],[19.636,0.0]]},{"layer":"GA_Component","pts":[[20.784,4.696],[21.918,4.696],[21.918,2.418],[20.784,2.418]]},{"layer":"GA_Component","pts":[[20.784,2.278],[21.918,2.278],[21.918,0.0],[20.784,0.0]]},{"layer":"GA_Component","pts":[[21.932,4.696],[23.066,4.696],[23.066,2.418],[21.932,2.418]]},{"layer":"GA_Component","pts":[[21.932,2.278],[23.066,2.278],[23.066,0.0],[21.932,0.0]]},{"layer":"GA_Component","pts":[[23.08,4.696],[24.214,4.696],[24.214,2.418],[23.08,2.418]]},{"layer":"GA_Component","pts":[[23.08,2.278],[24.214,2.278],[24.214,0.0],[23.08,0.0]]},{"layer":"GA_Component","pts":[[24.228,4.696],[25.362,4.696],[25.362,2.418],[24.228,2.418]]},{"layer":"GA_Component","pts":[[24.228,2.278],[25.362,2.278],[25.362,0.0],[24.228,0.0]]},{"layer":"GA_Component","pts":[[25.376,4.696],[26.51,4.696],[26.51,2.418],[25.376,2.418]]},{"layer":"GA_Component","pts":[[25.376,2.278],[26.51,2.278],[26.51,0.0],[25.376,0.0]]},{"layer":"GA_Component","pts":[[26.524,4.696],[27.658,4.696],[27.658,2.418],[26.524,2.418]]},{"layer":"GA_Component","pts":[[26.524,2.278],[27.658,2.278],[27.658,0.0],[26.524,0.0]]},{"layer":"GA_Component","pts":[[27.672,4.696],[28.806,4.696],[28.806,2.418],[27.672,2.418]]},{"layer":"GA_Component","pts":[[27.672,2.278],[28.806,2.278],[28.806,0.0],[27.672,0.0]]},{"layer":"GA_Component","pts":[[28.82,4.696],[29.954,4.696],[29.954,2.418],[28.82,2.418]]},{"layer":"GA_Component","pts":[[28.82,2.278],[29.954,2.278],[29.954,0.0],[28.82,0.0]]},{"layer":"GA_Component","pts":[[29.968,4.696],[31.102,4.696],[31.102,2.418],[29.968,2.418]]},{"layer":"GA_Component","pts":[[29.968,2.278],[31.102,2.278],[31.102,0.0],[29.968,0.0]]},{"layer":"GA_Component","pts":[[31.622,4.696],[32.756,4.696],[32.756,2.418],[31.622,2.418]]},{"layer":"GA_Component","pts":[[31.622,2.278],[32.756,2.278],[32.756,0.0],[31.622,0.0]]},{"layer":"GA_Component","pts":[[32.77,4.696],[33.904,4.696],[33.904,2.418],[32.77,2.418]]},{"layer":"GA_Component","pts":[[32.77,2.278],[33.904,2.278],[33.904,0.0],[32.77,0.0]]},{"layer":"GA_Component","pts":[[33.918,4.696],[35.052,4.696],[35.052,2.418],[33.918,2.418]]},{"layer":"GA_Component","pts":[[33.918,2.278],[35.052,2.278],[35.052,0.0],[33.918,0.0]]},{"layer":"GA_Component","pts":[[35.066,4.696],[36.2,4.696],[36.2,2.418],[35.066,2.418]]},{"layer":"GA_Component","pts":[[35.066,2.278],[36.2,2.278],[36.2,0.0],[35.066,0.0]]},{"layer":"GA_Component","pts":[[36.214,4.696],[37.348,4.696],[37.348,2.418],[36.214,2.418]]},{"layer":"GA_Component","pts":[[36.214,2.278],[37.348,2.278],[37.348,0.0],[36.214,0.0]]},{"layer":"GA_Component","pts":[[37.362,4.696],[38.496,4.696],[38.496,2.418],[37.362,2.418]]},{"layer":"GA_Component","pts":[[37.362,2.278],[38.496,2.278],[38.496,0.0],[37.362,0.0]]},{"layer":"GA_Component","pts":[[38.51,4.696],[39.644,4.696],[39.644,2.418],[38.51,2.418]]},{"layer":"GA_Component","pts":[[38.51,2.278],[39.644,2.278],[39.644,0.0],[38.51,0.0]]},{"layer":"GA_Component","pts":[[39.658,4.696],[40.792,4.696],[40.792,2.418],[39.658,2.418]]},{"layer":"GA_Component","pts":[[39.658,2.278],[40.792,2.278],[40.792,0.0],[39.658,0.0]]},{"layer":"GA_Component","pts":[[40.806,4.696],[41.94,4.696],[41.94,2.418],[40.806,2.418]]},{"layer":"GA_Component","pts":[[40.806,2.278],[41.94,2.278],[41.94,0.0],[40.806,0.0]]},{"layer":"GA_Component","pts":[[41.954,4.696],[43.088,4.696],[43.088,2.418],[41.954,2.418]]},{"layer":"GA_Component","pts":[[41.954,2.278],[43.088,2.278],[43.088,0.0],[41.954,0.0]]},{"layer":"GA_Component","pts":[[43.102,4.696],[44.236,4.696],[44.236,2.418],[43.102,2.418]]},{"layer":"GA_Component","pts":[[43.102,2.278],[44.236,2.278],[44.236,0.0],[43.102,0.0]]},{"layer":"GA_Component","pts":[[44.25,4.696],[45.384,4.696],[45.384,2.418],[44.25,2.418]]},{"layer":"GA_Component","pts":[[44.25,2.278],[45.384,2.278],[45.384,0.0],[44.25,0.0]]},{"layer":"GA_Component","pts":[[45.398,4.696],[46.532,4.696],[46.532,2.418],[45.398,2.418]]},{"layer":"GA_Component","pts":[[45.398,2.278],[46.532,2.278],[46.532,0.0],[45.398,0.0]]},{"layer":"GA_Component","pts":[[46.546,4.696],[47.68,4.696],[47.68,2.418],[46.546,2.418]]},{"layer":"GA_Component","pts":[[46.546,2.278],[47.68,2.278],[47.68,0.0],[46.546,0.0]]},{"layer":"GA_Component","pts":[[47.694,4.696],[48.828,4.696],[48.828,2.418],[47.694,2.418]]},{"layer":"GA_Component","pts":[[47.694,2.278],[48.828,2.278],[48.828,0.0],[47.694,0.0]]},{"layer":"GA_Component","pts":[[48.842,4.696],[49.976,4.696],[49.976,2.418],[48.842,2.418]]},{"layer":"GA_Component","pts":[[48.842,2.278],[49.976,2.278],[49.976,0.0],[48.842,0.0]]},{"layer":"GA_Component","pts":[[49.99,4.696],[51.124,4.696],[51.124,2.418],[49.99,2.418]]},{"layer":"GA_Component","pts":[[49.99,2.278],[51.124,2.278],[51.124,0.0],[49.99,0.0]]},{"layer":"GA_Component","pts":[[51.138,4.696],[52.272,4.696],[52.272,2.418],[51.138,2.418]]},{"layer":"GA_Component","pts":[[51.138,2.278],[52.272,2.278],[52.272,0.0],[51.138,0.0]]},{"layer":"GA_Component","pts":[[52.286,4.696],[53.42,4.696],[53.42,2.418],[52.286,2.418]]},{"layer":"GA_Component","pts":[[52.286,2.278],[53.42,2.278],[53.42,0.0],[52.286,0.0]]},{"layer":"GA_Component","pts":[[53.434,4.696],[54.568,4.696],[54.568,2.418],[53.434,2.418]]},{"layer":"GA_Component","pts":[[53.434,2.278],[54.568,2.278],[54.568,0.0],[53.434,0.0]]},{"layer":"GA_Component","pts":[[54.582,4.696],[55.716,4.696],[55.716,2.418],[54.582,2.418]]},{"layer":"GA_Component","pts":[[54.582,2.278],[55.716,2.278],[55.716,0.0],[54.582,0.0]]},{"layer":"GA_Component","pts":[[55.73,4.696],[56.864,4.696],[56.864,2.418],[55.73,2.418]]},{"layer":"GA_Component","pts":[[55.73,2.278],[56.864,2.278],[56.864,0.0],[55.73,0.0]]},{"layer":"GA_Component","pts":[[56.878,4.696],[58.012,4.696],[58.012,2.418],[56.878,2.418]]},{"layer":"GA_Component","pts":[[56.878,2.278],[58.012,2.278],[58.012,0.0],[56.878,0.0]]},{"layer":"GA_Component","pts":[[58.026,4.696],[59.16,4.696],[59.16,2.418],[58.026,2.418]]},{"layer":"GA_Component","pts":[[58.026,2.278],[59.16,2.278],[59.16,0.0],[58.026,0.0]]},{"layer":"GA_Component","pts":[[59.174,4.696],[60.308,4.696],[60.308,2.418],[59.174,2.418]]},{"layer":"GA_Component","pts":[[59.174,2.278],[60.308,2.278],[60.308,0.0],[59.174,0.0]]},{"layer":"GA_Component","pts":[[60.322,4.696],[61.456,4.696],[61.456,2.418],[60.322,2.418]]},{"layer":"GA_Component","pts":[[60.322,2.278],[61.456,2.278],[61.456,0.0],[60.322,0.0]]},{"layer":"GA_Component","pts":[[61.47,4.696],[62.604,4.696],[62.604,2.418],[61.47,2.418]]},{"layer":"GA_Component","pts":[[61.47,2.278],[62.604,2.278],[62.604,0.0],[61.47,0.0]]},{"layer":"GA_Component","pts":[[0.0,2.418],[9.597,2.418],[9.597,2.278],[0.0,2.278]]},{"layer":"GA_Component","pts":[[9.727,2.418],[15.777,2.418],[15.777,2.278],[9.727,2.278]]},{"layer":"GA_Component","pts":[[15.827,2.418],[22.677,2.418],[22.677,2.278],[15.827,2.278]]},{"layer":"GA_Component","pts":[[22.727,2.418],[31.297,2.418],[31.297,2.278],[22.727,2.278]]},{"layer":"GA_Component","pts":[[31.427,2.418],[39.997,2.418],[39.997,2.278],[31.427,2.278]]},{"layer":"GA_Component","pts":[[40.047,2.418],[46.897,2.418],[46.897,2.278],[40.047,2.278]]},{"layer":"GA_Component","pts":[[46.947,2.418],[52.997,2.418],[52.997,2.278],[46.947,2.278]]},{"layer":"GA_Component","pts":[[53.127,2.418],[62.724,2.418],[62.724,2.278],[53.127,2.278]]}]},{"name":"SAT_2P_2S_MIX","tech":"SAT","tracker_type":"2P","strings":2,"panels_per_string":27,"total_panels":53,"w":46.652,"h":4.696,"polys":[{"layer":"GA_Component","pts":[[0.12,4.696],[1.254,4.696],[1.254,2.418],[0.12,2.418]]},{"layer":"GA_Component","pts":[[0.12,2.278],[1.254,2.278],[1.254,0.0],[0.12,0.0]]},{"layer":"GA_Component","pts":[[1.268,4.696],[2.402,4.696],[2.402,2.418],[1.268,2.418]]},{"layer":"GA_Component","pts":[[1.268,2.278],[2.402,2.278],[2.402,0.0],[1.268,0.0]]},{"layer":"GA_Component","pts":[[2.416,4.696],[3.55,4.696],[3.55,2.418],[2.416,2.418]]},{"layer":"GA_Component","pts":[[2.416,2.278],[3.55,2.278],[3.55,0.0],[2.416,0.0]]},{"layer":"GA_Component","pts":[[3.564,4.696],[4.698,4.696],[4.698,2.418],[3.564,2.418]]},{"layer":"GA_Component","pts":[[3.564,2.278],[4.698,2.278],[4.698,0.0],[3.564,0.0]]},{"layer":"GA_Component","pts":[[4.712,4.696],[5.846,4.696],[5.846,2.418],[4.712,2.418]]},{"layer":"GA_Component","pts":[[4.712,2.278],[5.846,2.278],[5.846,0.0],[4.712,0.0]]},{"layer":"GA_Component","pts":[[5.86,4.696],[6.994,4.696],[6.994,2.418],[5.86,2.418]]},{"layer":"GA_Component","pts":[[5.86,2.278],[6.994,2.278],[6.994,0.0],[5.86,0.0]]},{"layer":"GA_Component","pts":[[7.008,4.696],[8.142,4.696],[8.142,2.418],[7.008,2.418]]},{"layer":"GA_Component","pts":[[7.008,2.278],[8.142,2.278],[8.142,0.0],[7.008,0.0]]},{"layer":"GA_Component","pts":[[8.156,4.696],[9.29,4.696],[9.29,2.418],[8.156,2.418]]},{"layer":"GA_Component","pts":[[8.156,2.278],[9.29,2.278],[9.29,0.0],[8.156,0.0]]},{"layer":"GA_Component","pts":[[9.304,4.696],[10.438,4.696],[10.438,2.418],[9.304,2.418]]},{"layer":"GA_Component","pts":[[9.304,2.278],[10.438,2.278],[10.438,0.0],[9.304,0.0]]},{"layer":"GA_Component","pts":[[10.452,4.696],[11.586,4.696],[11.586,2.418],[10.452,2.418]]},{"layer":"GA_Component","pts":[[10.452,2.278],[11.586,2.278],[11.586,0.0],[10.452,0.0]]},{"layer":"GA_Component","pts":[[11.6,4.696],[12.734,4.696],[12.734,2.418],[11.6,2.418]]},{"layer":"GA_Component","pts":[[11.6,2.278],[12.734,2.278],[12.734,0.0],[11.6,0.0]]},{"layer":"GA_Component","pts":[[12.748,4.696],[13.882,4.696],[13.882,2.418],[12.748,2.418]]},{"layer":"GA_Component","pts":[[12.748,2.278],[13.882,2.278],[13.882,0.0],[12.748,0.0]]},{"layer":"GA_Component","pts":[[13.896,4.696],[15.03,4.696],[15.03,2.418],[13.896,2.418]]},{"layer":"GA_Component","pts":[[13.896,2.278],[15.03,2.278],[15.03,0.0],[13.896,0.0]]},{"layer":"GA_Component","pts":[[15.044,4.696],[16.178,4.696],[16.178,2.418],[15.044,2.418]]},{"layer":"GA_Component","pts":[[15.044,2.278],[16.178,2.278],[16.178,0.0],[15.044,0.0]]},{"layer":"GA_Component","pts":[[16.192,4.696],[17.326,4.696],[17.326,2.418],[16.192,2.418]]},{"layer":"GA_Component","pts":[[16.192,2.278],[17.326,2.278],[17.326,0.0],[16.192,0.0]]},{"layer":"GA_Component","pts":[[17.34,4.696],[18.474,4.696],[18.474,2.418],[17.34,2.418]]},{"layer":"GA_Component","pts":[[17.34,2.278],[18.474,2.278],[18.474,0.0],[17.34,0.0]]},{"layer":"GA_Component","pts":[[18.488,4.696],[19.622,4.696],[19.622,2.418],[18.488,2.418]]},{"layer":"GA_Component","pts":[[18.488,2.278],[19.622,2.278],[19.622,0.0],[18.488,0.0]]},{"layer":"GA_Component","pts":[[19.636,4.696],[20.77,4.696],[20.77,2.418],[19.636,2.418]]},{"layer":"GA_Component","pts":[[19.636,2.278],[20.77,2.278],[20.77,0.0],[19.636,0.0]]},{"layer":"GA_Component","pts":[[20.784,4.696],[21.918,4.696],[21.918,2.418],[20.784,2.418]]},{"layer":"GA_Component","pts":[[20.784,2.278],[21.918,2.278],[21.918,0.0],[20.784,0.0]]},{"layer":"GA_Component","pts":[[21.932,4.696],[23.066,4.696],[23.066,2.418],[21.932,2.418]]},{"layer":"GA_Component","pts":[[21.932,2.278],[23.066,2.278],[23.066,0.0],[21.932,0.0]]},{"layer":"GA_Component","pts":[[23.586,4.696],[24.72,4.696],[24.72,2.418],[23.586,2.418]]},{"layer":"GA_Component","pts":[[23.586,2.278],[24.72,2.278],[24.72,0.0],[23.586,0.0]]},{"layer":"GA_Component","pts":[[24.734,4.696],[25.868,4.696],[25.868,2.418],[24.734,2.418]]},{"layer":"GA_Component","pts":[[24.734,2.278],[25.868,2.278],[25.868,0.0],[24.734,0.0]]},{"layer":"GA_Component","pts":[[25.882,4.696],[27.016,4.696],[27.016,2.418],[25.882,2.418]]},{"layer":"GA_Component","pts":[[25.882,2.278],[27.016,2.278],[27.016,0.0],[25.882,0.0]]},{"layer":"GA_Component","pts":[[27.03,4.696],[28.164,4.696],[28.164,2.418],[27.03,2.418]]},{"layer":"GA_Component","pts":[[27.03,2.278],[28.164,2.278],[28.164,0.0],[27.03,0.0]]},{"layer":"GA_Component","pts":[[28.178,4.696],[29.312,4.696],[29.312,2.418],[28.178,2.418]]},{"layer":"GA_Component","pts":[[28.178,2.278],[29.312,2.278],[29.312,0.0],[28.178,0.0]]},{"layer":"GA_Component","pts":[[29.326,4.696],[30.46,4.696],[30.46,2.418],[29.326,2.418]]},{"layer":"GA_Component","pts":[[29.326,2.278],[30.46,2.278],[30.46,0.0],[29.326,0.0]]},{"layer":"GA_Component","pts":[[30.474,4.696],[31.608,4.696],[31.608,2.418],[30.474,2.418]]},{"layer":"GA_Component","pts":[[30.474,2.278],[31.608,2.278],[31.608,0.0],[30.474,0.0]]},{"layer":"GA_Component","pts":[[31.622,4.696],[32.756,4.696],[32.756,2.418],[31.622,2.418]]},{"layer":"GA_Component","pts":[[31.622,2.278],[32.756,2.278],[32.756,0.0],[31.622,0.0]]},{"layer":"GA_Component","pts":[[32.77,4.696],[33.904,4.696],[33.904,2.418],[32.77,2.418]]},{"layer":"GA_Component","pts":[[32.77,2.278],[33.904,2.278],[33.904,0.0],[32.77,0.0]]},{"layer":"GA_Component","pts":[[33.918,4.696],[35.052,4.696],[35.052,2.418],[33.918,2.418]]},{"layer":"GA_Component","pts":[[33.918,2.278],[35.052,2.278],[35.052,0.0],[33.918,0.0]]},{"layer":"GA_Component","pts":[[35.066,4.696],[36.2,4.696],[36.2,2.418],[35.066,2.418]]},{"layer":"GA_Component","pts":[[35.066,2.278],[36.2,2.278],[36.2,0.0],[35.066,0.0]]},{"layer":"GA_Component","pts":[[36.214,4.696],[37.348,4.696],[37.348,2.418],[36.214,2.418]]},{"layer":"GA_Component","pts":[[36.214,2.278],[37.348,2.278],[37.348,0.0],[36.214,0.0]]},{"layer":"GA_Component","pts":[[37.362,4.696],[38.496,4.696],[38.496,2.418],[37.362,2.418]]},{"layer":"GA_Component","pts":[[37.362,2.278],[38.496,2.278],[38.496,0.0],[37.362,0.0]]},{"layer":"GA_Component","pts":[[38.51,4.696],[39.644,4.696],[39.644,2.418],[38.51,2.418]]},{"layer":"GA_Component","pts":[[38.51,2.278],[39.644,2.278],[39.644,0.0],[38.51,0.0]]},{"layer":"GA_Component","pts":[[39.658,4.696],[40.792,4.696],[40.792,2.418],[39.658,2.418]]},{"layer":"GA_Component","pts":[[39.658,2.278],[40.792,2.278],[40.792,0.0],[39.658,0.0]]},{"layer":"GA_Component","pts":[[40.806,4.696],[41.94,4.696],[41.94,2.418],[40.806,2.418]]},{"layer":"GA_Component","pts":[[40.806,2.278],[41.94,2.278],[41.94,0.0],[40.806,0.0]]},{"layer":"GA_Component","pts":[[41.954,4.696],[43.088,4.696],[43.088,2.418],[41.954,2.418]]},{"layer":"GA_Component","pts":[[41.954,2.278],[43.088,2.278],[43.088,0.0],[41.954,0.0]]},{"layer":"GA_Component","pts":[[43.102,4.696],[44.236,4.696],[44.236,2.418],[43.102,2.418]]},{"layer":"GA_Component","pts":[[43.102,2.278],[44.236,2.278],[44.236,0.0],[43.102,0.0]]},{"layer":"GA_Component","pts":[[44.25,4.696],[45.384,4.696],[45.384,2.418],[44.25,2.418]]},{"layer":"GA_Component","pts":[[44.25,2.278],[45.384,2.278],[45.384,0.0],[44.25,0.0]]},{"layer":"GA_Component","pts":[[45.398,4.696],[46.532,4.696],[46.532,2.418],[45.398,2.418]]},{"layer":"GA_Component","pts":[[45.398,2.278],[46.532,2.278],[46.532,0.0],[45.398,0.0]]},{"layer":"GA_Component","pts":[[0.0,2.418],[9.561,2.418],[9.561,2.278],[0.0,2.278]]},{"layer":"GA_Component","pts":[[9.691,2.418],[15.791,2.418],[15.791,2.278],[9.691,2.278]]},{"layer":"GA_Component","pts":[[15.841,2.418],[23.261,2.418],[23.261,2.278],[15.841,2.278]]},{"layer":"GA_Component","pts":[[23.391,2.418],[30.941,2.418],[30.941,2.278],[23.391,2.278]]},{"layer":"GA_Component","pts":[[30.991,2.418],[36.961,2.418],[36.961,2.278],[30.991,2.278]]},{"layer":"GA_Component","pts":[[37.091,2.418],[46.652,2.418],[46.652,2.278],[37.091,2.278]]}]},{"name":"FIX_3P_1S_27P","tech":"FIX","tracker_type":"FIX","strings":1,"panels_per_string":27,"total_panels":81,"w":35.75,"h":2.389,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[35.75,0],[35.75,2.389],[0,2.389],[0,0]]},{"layer":"FIX_PANEL","pts":[[0.0,0.0],[1.303,0.0],[1.303,2.389],[0.0,2.389],[0.0,0.0]]},{"layer":"FIX_PANEL","pts":[[1.3249,0.0],[2.6279,0.0],[2.6279,2.389],[1.3249,2.389],[1.3249,0.0]]},{"layer":"FIX_PANEL","pts":[[2.6498,0.0],[3.9528,0.0],[3.9528,2.389],[2.6498,2.389],[2.6498,0.0]]},{"layer":"FIX_PANEL","pts":[[3.9747,0.0],[5.2777,0.0],[5.2777,2.389],[3.9747,2.389],[3.9747,0.0]]},{"layer":"FIX_PANEL","pts":[[5.2995,0.0],[6.6025,0.0],[6.6025,2.389],[5.2995,2.389],[5.2995,0.0]]},{"layer":"FIX_PANEL","pts":[[6.6244,0.0],[7.9274,0.0],[7.9274,2.389],[6.6244,2.389],[6.6244,0.0]]},{"layer":"FIX_PANEL","pts":[[7.9493,0.0],[9.2523,0.0],[9.2523,2.389],[7.9493,2.389],[7.9493,0.0]]},{"layer":"FIX_PANEL","pts":[[9.2742,0.0],[10.5772,0.0],[10.5772,2.389],[9.2742,2.389],[9.2742,0.0]]},{"layer":"FIX_PANEL","pts":[[10.5991,0.0],[11.9021,0.0],[11.9021,2.389],[10.5991,2.389],[10.5991,0.0]]},{"layer":"FIX_PANEL","pts":[[11.924,0.0],[13.227,0.0],[13.227,2.389],[11.924,2.389],[11.924,0.0]]},{"layer":"FIX_PANEL","pts":[[13.2488,0.0],[14.5518,0.0],[14.5518,2.389],[13.2488,2.389],[13.2488,0.0]]},{"layer":"FIX_PANEL","pts":[[14.5737,0.0],[15.8767,0.0],[15.8767,2.389],[14.5737,2.389],[14.5737,0.0]]},{"layer":"FIX_PANEL","pts":[[15.8986,0.0],[17.2016,0.0],[17.2016,2.389],[15.8986,2.389],[15.8986,0.0]]},{"layer":"FIX_PANEL","pts":[[17.2235,0.0],[18.5265,0.0],[18.5265,2.389],[17.2235,2.389],[17.2235,0.0]]},{"layer":"FIX_PANEL","pts":[[18.5484,0.0],[19.8514,0.0],[19.8514,2.389],[18.5484,2.389],[18.5484,0.0]]},{"layer":"FIX_PANEL","pts":[[19.8733,0.0],[21.1763,0.0],[21.1763,2.389],[19.8733,2.389],[19.8733,0.0]]},{"layer":"FIX_PANEL","pts":[[21.1982,0.0],[22.5012,0.0],[22.5012,2.389],[21.1982,2.389],[21.1982,0.0]]},{"layer":"FIX_PANEL","pts":[[22.523,0.0],[23.826,0.0],[23.826,2.389],[22.523,2.389],[22.523,0.0]]},{"layer":"FIX_PANEL","pts":[[23.8479,0.0],[25.1509,0.0],[25.1509,2.389],[23.8479,2.389],[23.8479,0.0]]},{"layer":"FIX_PANEL","pts":[[25.1728,0.0],[26.4758,0.0],[26.4758,2.389],[25.1728,2.389],[25.1728,0.0]]},{"layer":"FIX_PANEL","pts":[[26.4977,0.0],[27.8007,0.0],[27.8007,2.389],[26.4977,2.389],[26.4977,0.0]]},{"layer":"FIX_PANEL","pts":[[27.8226,0.0],[29.1256,0.0],[29.1256,2.389],[27.8226,2.389],[27.8226,0.0]]},{"layer":"FIX_PANEL","pts":[[29.1475,0.0],[30.4505,0.0],[30.4505,2.389],[29.1475,2.389],[29.1475,0.0]]},{"layer":"FIX_PANEL","pts":[[30.4723,0.0],[31.7753,0.0],[31.7753,2.389],[30.4723,2.389],[30.4723,0.0]]},{"layer":"FIX_PANEL","pts":[[31.7972,0.0],[33.1002,0.0],[33.1002,2.389],[31.7972,2.389],[31.7972,0.0]]},{"layer":"FIX_PANEL","pts":[[33.1221,0.0],[34.4251,0.0],[34.4251,2.389],[33.1221,2.389],[33.1221,0.0]]},{"layer":"FIX_PANEL","pts":[[34.447,0.0],[35.75,0.0],[35.75,2.389],[34.447,2.389],[34.447,0.0]]}]},{"name":"FIX_3P_1S_28P","tech":"FIX","tracker_type":"FIX","strings":1,"panels_per_string":28,"total_panels":84,"w":37.0749,"h":2.389,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[37.07488461538461,0],[37.07488461538461,2.389],[0,2.389],[0,0]]},{"layer":"FIX_PANEL","pts":[[0.0,0.0],[1.303,0.0],[1.303,2.389],[0.0,2.389],[0.0,0.0]]},{"layer":"FIX_PANEL","pts":[[1.3249,0.0],[2.6279,0.0],[2.6279,2.389],[1.3249,2.389],[1.3249,0.0]]},{"layer":"FIX_PANEL","pts":[[2.6498,0.0],[3.9528,0.0],[3.9528,2.389],[2.6498,2.389],[2.6498,0.0]]},{"layer":"FIX_PANEL","pts":[[3.9747,0.0],[5.2777,0.0],[5.2777,2.389],[3.9747,2.389],[3.9747,0.0]]},{"layer":"FIX_PANEL","pts":[[5.2995,0.0],[6.6025,0.0],[6.6025,2.389],[5.2995,2.389],[5.2995,0.0]]},{"layer":"FIX_PANEL","pts":[[6.6244,0.0],[7.9274,0.0],[7.9274,2.389],[6.6244,2.389],[6.6244,0.0]]},{"layer":"FIX_PANEL","pts":[[7.9493,0.0],[9.2523,0.0],[9.2523,2.389],[7.9493,2.389],[7.9493,0.0]]},{"layer":"FIX_PANEL","pts":[[9.2742,0.0],[10.5772,0.0],[10.5772,2.389],[9.2742,2.389],[9.2742,0.0]]},{"layer":"FIX_PANEL","pts":[[10.5991,0.0],[11.9021,0.0],[11.9021,2.389],[10.5991,2.389],[10.5991,0.0]]},{"layer":"FIX_PANEL","pts":[[11.924,0.0],[13.227,0.0],[13.227,2.389],[11.924,2.389],[11.924,0.0]]},{"layer":"FIX_PANEL","pts":[[13.2488,0.0],[14.5518,0.0],[14.5518,2.389],[13.2488,2.389],[13.2488,0.0]]},{"layer":"FIX_PANEL","pts":[[14.5737,0.0],[15.8767,0.0],[15.8767,2.389],[14.5737,2.389],[14.5737,0.0]]},{"layer":"FIX_PANEL","pts":[[15.8986,0.0],[17.2016,0.0],[17.2016,2.389],[15.8986,2.389],[15.8986,0.0]]},{"layer":"FIX_PANEL","pts":[[17.2235,0.0],[18.5265,0.0],[18.5265,2.389],[17.2235,2.389],[17.2235,0.0]]},{"layer":"FIX_PANEL","pts":[[18.5484,0.0],[19.8514,0.0],[19.8514,2.389],[18.5484,2.389],[18.5484,0.0]]},{"layer":"FIX_PANEL","pts":[[19.8733,0.0],[21.1763,0.0],[21.1763,2.389],[19.8733,2.389],[19.8733,0.0]]},{"layer":"FIX_PANEL","pts":[[21.1982,0.0],[22.5012,0.0],[22.5012,2.389],[21.1982,2.389],[21.1982,0.0]]},{"layer":"FIX_PANEL","pts":[[22.523,0.0],[23.826,0.0],[23.826,2.389],[22.523,2.389],[22.523,0.0]]},{"layer":"FIX_PANEL","pts":[[23.8479,0.0],[25.1509,0.0],[25.1509,2.389],[23.8479,2.389],[23.8479,0.0]]},{"layer":"FIX_PANEL","pts":[[25.1728,0.0],[26.4758,0.0],[26.4758,2.389],[25.1728,2.389],[25.1728,0.0]]},{"layer":"FIX_PANEL","pts":[[26.4977,0.0],[27.8007,0.0],[27.8007,2.389],[26.4977,2.389],[26.4977,0.0]]},{"layer":"FIX_PANEL","pts":[[27.8226,0.0],[29.1256,0.0],[29.1256,2.389],[27.8226,2.389],[27.8226,0.0]]},{"layer":"FIX_PANEL","pts":[[29.1475,0.0],[30.4505,0.0],[30.4505,2.389],[29.1475,2.389],[29.1475,0.0]]},{"layer":"FIX_PANEL","pts":[[30.4723,0.0],[31.7753,0.0],[31.7753,2.389],[30.4723,2.389],[30.4723,0.0]]},{"layer":"FIX_PANEL","pts":[[31.7972,0.0],[33.1002,0.0],[33.1002,2.389],[31.7972,2.389],[31.7972,0.0]]},{"layer":"FIX_PANEL","pts":[[33.1221,0.0],[34.4251,0.0],[34.4251,2.389],[33.1221,2.389],[33.1221,0.0]]},{"layer":"FIX_PANEL","pts":[[34.447,0.0],[35.75,0.0],[35.75,2.389],[34.447,2.389],[34.447,0.0]]},{"layer":"FIX_PANEL","pts":[[35.7719,0.0],[37.0749,0.0],[37.0749,2.389],[35.7719,2.389],[35.7719,0.0]]}]},{"name":"FIX_3P_2S_27P","tech":"FIX","tracker_type":"FIX","strings":2,"panels_per_string":27,"total_panels":162,"w":35.75,"h":4.798,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[35.75,0],[35.75,4.797999999999999],[0,4.797999999999999],[0,0]]},{"layer":"FIX_PANEL","pts":[[0.0,0.0],[1.303,0.0],[1.303,2.389],[0.0,2.389],[0.0,0.0]]},{"layer":"FIX_PANEL","pts":[[1.3249,0.0],[2.6279,0.0],[2.6279,2.389],[1.3249,2.389],[1.3249,0.0]]},{"layer":"FIX_PANEL","pts":[[2.6498,0.0],[3.9528,0.0],[3.9528,2.389],[2.6498,2.389],[2.6498,0.0]]},{"layer":"FIX_PANEL","pts":[[3.9747,0.0],[5.2777,0.0],[5.2777,2.389],[3.9747,2.389],[3.9747,0.0]]},{"layer":"FIX_PANEL","pts":[[5.2995,0.0],[6.6025,0.0],[6.6025,2.389],[5.2995,2.389],[5.2995,0.0]]},{"layer":"FIX_PANEL","pts":[[6.6244,0.0],[7.9274,0.0],[7.9274,2.389],[6.6244,2.389],[6.6244,0.0]]},{"layer":"FIX_PANEL","pts":[[7.9493,0.0],[9.2523,0.0],[9.2523,2.389],[7.9493,2.389],[7.9493,0.0]]},{"layer":"FIX_PANEL","pts":[[9.2742,0.0],[10.5772,0.0],[10.5772,2.389],[9.2742,2.389],[9.2742,0.0]]},{"layer":"FIX_PANEL","pts":[[10.5991,0.0],[11.9021,0.0],[11.9021,2.389],[10.5991,2.389],[10.5991,0.0]]},{"layer":"FIX_PANEL","pts":[[11.924,0.0],[13.227,0.0],[13.227,2.389],[11.924,2.389],[11.924,0.0]]},{"layer":"FIX_PANEL","pts":[[13.2488,0.0],[14.5518,0.0],[14.5518,2.389],[13.2488,2.389],[13.2488,0.0]]},{"layer":"FIX_PANEL","pts":[[14.5737,0.0],[15.8767,0.0],[15.8767,2.389],[14.5737,2.389],[14.5737,0.0]]},{"layer":"FIX_PANEL","pts":[[15.8986,0.0],[17.2016,0.0],[17.2016,2.389],[15.8986,2.389],[15.8986,0.0]]},{"layer":"FIX_PANEL","pts":[[17.2235,0.0],[18.5265,0.0],[18.5265,2.389],[17.2235,2.389],[17.2235,0.0]]},{"layer":"FIX_PANEL","pts":[[18.5484,0.0],[19.8514,0.0],[19.8514,2.389],[18.5484,2.389],[18.5484,0.0]]},{"layer":"FIX_PANEL","pts":[[19.8733,0.0],[21.1763,0.0],[21.1763,2.389],[19.8733,2.389],[19.8733,0.0]]},{"layer":"FIX_PANEL","pts":[[21.1982,0.0],[22.5012,0.0],[22.5012,2.389],[21.1982,2.389],[21.1982,0.0]]},{"layer":"FIX_PANEL","pts":[[22.523,0.0],[23.826,0.0],[23.826,2.389],[22.523,2.389],[22.523,0.0]]},{"layer":"FIX_PANEL","pts":[[23.8479,0.0],[25.1509,0.0],[25.1509,2.389],[23.8479,2.389],[23.8479,0.0]]},{"layer":"FIX_PANEL","pts":[[25.1728,0.0],[26.4758,0.0],[26.4758,2.389],[25.1728,2.389],[25.1728,0.0]]},{"layer":"FIX_PANEL","pts":[[26.4977,0.0],[27.8007,0.0],[27.8007,2.389],[26.4977,2.389],[26.4977,0.0]]},{"layer":"FIX_PANEL","pts":[[27.8226,0.0],[29.1256,0.0],[29.1256,2.389],[27.8226,2.389],[27.8226,0.0]]},{"layer":"FIX_PANEL","pts":[[29.1475,0.0],[30.4505,0.0],[30.4505,2.389],[29.1475,2.389],[29.1475,0.0]]},{"layer":"FIX_PANEL","pts":[[30.4723,0.0],[31.7753,0.0],[31.7753,2.389],[30.4723,2.389],[30.4723,0.0]]},{"layer":"FIX_PANEL","pts":[[31.7972,0.0],[33.1002,0.0],[33.1002,2.389],[31.7972,2.389],[31.7972,0.0]]},{"layer":"FIX_PANEL","pts":[[33.1221,0.0],[34.4251,0.0],[34.4251,2.389],[33.1221,2.389],[33.1221,0.0]]},{"layer":"FIX_PANEL","pts":[[34.447,0.0],[35.75,0.0],[35.75,2.389],[34.447,2.389],[34.447,0.0]]},{"layer":"FIX_PANEL","pts":[[0.0,2.409],[1.303,2.409],[1.303,4.798],[0.0,4.798],[0.0,2.409]]},{"layer":"FIX_PANEL","pts":[[1.3249,2.409],[2.6279,2.409],[2.6279,4.798],[1.3249,4.798],[1.3249,2.409]]},{"layer":"FIX_PANEL","pts":[[2.6498,2.409],[3.9528,2.409],[3.9528,4.798],[2.6498,4.798],[2.6498,2.409]]},{"layer":"FIX_PANEL","pts":[[3.9747,2.409],[5.2777,2.409],[5.2777,4.798],[3.9747,4.798],[3.9747,2.409]]},{"layer":"FIX_PANEL","pts":[[5.2995,2.409],[6.6025,2.409],[6.6025,4.798],[5.2995,4.798],[5.2995,2.409]]},{"layer":"FIX_PANEL","pts":[[6.6244,2.409],[7.9274,2.409],[7.9274,4.798],[6.6244,4.798],[6.6244,2.409]]},{"layer":"FIX_PANEL","pts":[[7.9493,2.409],[9.2523,2.409],[9.2523,4.798],[7.9493,4.798],[7.9493,2.409]]},{"layer":"FIX_PANEL","pts":[[9.2742,2.409],[10.5772,2.409],[10.5772,4.798],[9.2742,4.798],[9.2742,2.409]]},{"layer":"FIX_PANEL","pts":[[10.5991,2.409],[11.9021,2.409],[11.9021,4.798],[10.5991,4.798],[10.5991,2.409]]},{"layer":"FIX_PANEL","pts":[[11.924,2.409],[13.227,2.409],[13.227,4.798],[11.924,4.798],[11.924,2.409]]},{"layer":"FIX_PANEL","pts":[[13.2488,2.409],[14.5518,2.409],[14.5518,4.798],[13.2488,4.798],[13.2488,2.409]]},{"layer":"FIX_PANEL","pts":[[14.5737,2.409],[15.8767,2.409],[15.8767,4.798],[14.5737,4.798],[14.5737,2.409]]},{"layer":"FIX_PANEL","pts":[[15.8986,2.409],[17.2016,2.409],[17.2016,4.798],[15.8986,4.798],[15.8986,2.409]]},{"layer":"FIX_PANEL","pts":[[17.2235,2.409],[18.5265,2.409],[18.5265,4.798],[17.2235,4.798],[17.2235,2.409]]},{"layer":"FIX_PANEL","pts":[[18.5484,2.409],[19.8514,2.409],[19.8514,4.798],[18.5484,4.798],[18.5484,2.409]]},{"layer":"FIX_PANEL","pts":[[19.8733,2.409],[21.1763,2.409],[21.1763,4.798],[19.8733,4.798],[19.8733,2.409]]},{"layer":"FIX_PANEL","pts":[[21.1982,2.409],[22.5012,2.409],[22.5012,4.798],[21.1982,4.798],[21.1982,2.409]]},{"layer":"FIX_PANEL","pts":[[22.523,2.409],[23.826,2.409],[23.826,4.798],[22.523,4.798],[22.523,2.409]]},{"layer":"FIX_PANEL","pts":[[23.8479,2.409],[25.1509,2.409],[25.1509,4.798],[23.8479,4.798],[23.8479,2.409]]},{"layer":"FIX_PANEL","pts":[[25.1728,2.409],[26.4758,2.409],[26.4758,4.798],[25.1728,4.798],[25.1728,2.409]]},{"layer":"FIX_PANEL","pts":[[26.4977,2.409],[27.8007,2.409],[27.8007,4.798],[26.4977,4.798],[26.4977,2.409]]},{"layer":"FIX_PANEL","pts":[[27.8226,2.409],[29.1256,2.409],[29.1256,4.798],[27.8226,4.798],[27.8226,2.409]]},{"layer":"FIX_PANEL","pts":[[29.1475,2.409],[30.4505,2.409],[30.4505,4.798],[29.1475,4.798],[29.1475,2.409]]},{"layer":"FIX_PANEL","pts":[[30.4723,2.409],[31.7753,2.409],[31.7753,4.798],[30.4723,4.798],[30.4723,2.409]]},{"layer":"FIX_PANEL","pts":[[31.7972,2.409],[33.1002,2.409],[33.1002,4.798],[31.7972,4.798],[31.7972,2.409]]},{"layer":"FIX_PANEL","pts":[[33.1221,2.409],[34.4251,2.409],[34.4251,4.798],[33.1221,4.798],[33.1221,2.409]]},{"layer":"FIX_PANEL","pts":[[34.447,2.409],[35.75,2.409],[35.75,4.798],[34.447,4.798],[34.447,2.409]]}]},{"name":"FIX_3P_2S_28P","tech":"FIX","tracker_type":"FIX","strings":2,"panels_per_string":28,"total_panels":168,"w":37.0749,"h":4.798,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[37.07488461538461,0],[37.07488461538461,4.797999999999999],[0,4.797999999999999],[0,0]]},{"layer":"FIX_PANEL","pts":[[0.0,0.0],[1.303,0.0],[1.303,2.389],[0.0,2.389],[0.0,0.0]]},{"layer":"FIX_PANEL","pts":[[1.3249,0.0],[2.6279,0.0],[2.6279,2.389],[1.3249,2.389],[1.3249,0.0]]},{"layer":"FIX_PANEL","pts":[[2.6498,0.0],[3.9528,0.0],[3.9528,2.389],[2.6498,2.389],[2.6498,0.0]]},{"layer":"FIX_PANEL","pts":[[3.9747,0.0],[5.2777,0.0],[5.2777,2.389],[3.9747,2.389],[3.9747,0.0]]},{"layer":"FIX_PANEL","pts":[[5.2995,0.0],[6.6025,0.0],[6.6025,2.389],[5.2995,2.389],[5.2995,0.0]]},{"layer":"FIX_PANEL","pts":[[6.6244,0.0],[7.9274,0.0],[7.9274,2.389],[6.6244,2.389],[6.6244,0.0]]},{"layer":"FIX_PANEL","pts":[[7.9493,0.0],[9.2523,0.0],[9.2523,2.389],[7.9493,2.389],[7.9493,0.0]]},{"layer":"FIX_PANEL","pts":[[9.2742,0.0],[10.5772,0.0],[10.5772,2.389],[9.2742,2.389],[9.2742,0.0]]},{"layer":"FIX_PANEL","pts":[[10.5991,0.0],[11.9021,0.0],[11.9021,2.389],[10.5991,2.389],[10.5991,0.0]]},{"layer":"FIX_PANEL","pts":[[11.924,0.0],[13.227,0.0],[13.227,2.389],[11.924,2.389],[11.924,0.0]]},{"layer":"FIX_PANEL","pts":[[13.2488,0.0],[14.5518,0.0],[14.5518,2.389],[13.2488,2.389],[13.2488,0.0]]},{"layer":"FIX_PANEL","pts":[[14.5737,0.0],[15.8767,0.0],[15.8767,2.389],[14.5737,2.389],[14.5737,0.0]]},{"layer":"FIX_PANEL","pts":[[15.8986,0.0],[17.2016,0.0],[17.2016,2.389],[15.8986,2.389],[15.8986,0.0]]},{"layer":"FIX_PANEL","pts":[[17.2235,0.0],[18.5265,0.0],[18.5265,2.389],[17.2235,2.389],[17.2235,0.0]]},{"layer":"FIX_PANEL","pts":[[18.5484,0.0],[19.8514,0.0],[19.8514,2.389],[18.5484,2.389],[18.5484,0.0]]},{"layer":"FIX_PANEL","pts":[[19.8733,0.0],[21.1763,0.0],[21.1763,2.389],[19.8733,2.389],[19.8733,0.0]]},{"layer":"FIX_PANEL","pts":[[21.1982,0.0],[22.5012,0.0],[22.5012,2.389],[21.1982,2.389],[21.1982,0.0]]},{"layer":"FIX_PANEL","pts":[[22.523,0.0],[23.826,0.0],[23.826,2.389],[22.523,2.389],[22.523,0.0]]},{"layer":"FIX_PANEL","pts":[[23.8479,0.0],[25.1509,0.0],[25.1509,2.389],[23.8479,2.389],[23.8479,0.0]]},{"layer":"FIX_PANEL","pts":[[25.1728,0.0],[26.4758,0.0],[26.4758,2.389],[25.1728,2.389],[25.1728,0.0]]},{"layer":"FIX_PANEL","pts":[[26.4977,0.0],[27.8007,0.0],[27.8007,2.389],[26.4977,2.389],[26.4977,0.0]]},{"layer":"FIX_PANEL","pts":[[27.8226,0.0],[29.1256,0.0],[29.1256,2.389],[27.8226,2.389],[27.8226,0.0]]},{"layer":"FIX_PANEL","pts":[[29.1475,0.0],[30.4505,0.0],[30.4505,2.389],[29.1475,2.389],[29.1475,0.0]]},{"layer":"FIX_PANEL","pts":[[30.4723,0.0],[31.7753,0.0],[31.7753,2.389],[30.4723,2.389],[30.4723,0.0]]},{"layer":"FIX_PANEL","pts":[[31.7972,0.0],[33.1002,0.0],[33.1002,2.389],[31.7972,2.389],[31.7972,0.0]]},{"layer":"FIX_PANEL","pts":[[33.1221,0.0],[34.4251,0.0],[34.4251,2.389],[33.1221,2.389],[33.1221,0.0]]},{"layer":"FIX_PANEL","pts":[[34.447,0.0],[35.75,0.0],[35.75,2.389],[34.447,2.389],[34.447,0.0]]},{"layer":"FIX_PANEL","pts":[[35.7719,0.0],[37.0749,0.0],[37.0749,2.389],[35.7719,2.389],[35.7719,0.0]]},{"layer":"FIX_PANEL","pts":[[0.0,2.409],[1.303,2.409],[1.303,4.798],[0.0,4.798],[0.0,2.409]]},{"layer":"FIX_PANEL","pts":[[1.3249,2.409],[2.6279,2.409],[2.6279,4.798],[1.3249,4.798],[1.3249,2.409]]},{"layer":"FIX_PANEL","pts":[[2.6498,2.409],[3.9528,2.409],[3.9528,4.798],[2.6498,4.798],[2.6498,2.409]]},{"layer":"FIX_PANEL","pts":[[3.9747,2.409],[5.2777,2.409],[5.2777,4.798],[3.9747,4.798],[3.9747,2.409]]},{"layer":"FIX_PANEL","pts":[[5.2995,2.409],[6.6025,2.409],[6.6025,4.798],[5.2995,4.798],[5.2995,2.409]]},{"layer":"FIX_PANEL","pts":[[6.6244,2.409],[7.9274,2.409],[7.9274,4.798],[6.6244,4.798],[6.6244,2.409]]},{"layer":"FIX_PANEL","pts":[[7.9493,2.409],[9.2523,2.409],[9.2523,4.798],[7.9493,4.798],[7.9493,2.409]]},{"layer":"FIX_PANEL","pts":[[9.2742,2.409],[10.5772,2.409],[10.5772,4.798],[9.2742,4.798],[9.2742,2.409]]},{"layer":"FIX_PANEL","pts":[[10.5991,2.409],[11.9021,2.409],[11.9021,4.798],[10.5991,4.798],[10.5991,2.409]]},{"layer":"FIX_PANEL","pts":[[11.924,2.409],[13.227,2.409],[13.227,4.798],[11.924,4.798],[11.924,2.409]]},{"layer":"FIX_PANEL","pts":[[13.2488,2.409],[14.5518,2.409],[14.5518,4.798],[13.2488,4.798],[13.2488,2.409]]},{"layer":"FIX_PANEL","pts":[[14.5737,2.409],[15.8767,2.409],[15.8767,4.798],[14.5737,4.798],[14.5737,2.409]]},{"layer":"FIX_PANEL","pts":[[15.8986,2.409],[17.2016,2.409],[17.2016,4.798],[15.8986,4.798],[15.8986,2.409]]},{"layer":"FIX_PANEL","pts":[[17.2235,2.409],[18.5265,2.409],[18.5265,4.798],[17.2235,4.798],[17.2235,2.409]]},{"layer":"FIX_PANEL","pts":[[18.5484,2.409],[19.8514,2.409],[19.8514,4.798],[18.5484,4.798],[18.5484,2.409]]},{"layer":"FIX_PANEL","pts":[[19.8733,2.409],[21.1763,2.409],[21.1763,4.798],[19.8733,4.798],[19.8733,2.409]]},{"layer":"FIX_PANEL","pts":[[21.1982,2.409],[22.5012,2.409],[22.5012,4.798],[21.1982,4.798],[21.1982,2.409]]},{"layer":"FIX_PANEL","pts":[[22.523,2.409],[23.826,2.409],[23.826,4.798],[22.523,4.798],[22.523,2.409]]},{"layer":"FIX_PANEL","pts":[[23.8479,2.409],[25.1509,2.409],[25.1509,4.798],[23.8479,4.798],[23.8479,2.409]]},{"layer":"FIX_PANEL","pts":[[25.1728,2.409],[26.4758,2.409],[26.4758,4.798],[25.1728,4.798],[25.1728,2.409]]},{"layer":"FIX_PANEL","pts":[[26.4977,2.409],[27.8007,2.409],[27.8007,4.798],[26.4977,4.798],[26.4977,2.409]]},{"layer":"FIX_PANEL","pts":[[27.8226,2.409],[29.1256,2.409],[29.1256,4.798],[27.8226,4.798],[27.8226,2.409]]},{"layer":"FIX_PANEL","pts":[[29.1475,2.409],[30.4505,2.409],[30.4505,4.798],[29.1475,4.798],[29.1475,2.409]]},{"layer":"FIX_PANEL","pts":[[30.4723,2.409],[31.7753,2.409],[31.7753,4.798],[30.4723,4.798],[30.4723,2.409]]},{"layer":"FIX_PANEL","pts":[[31.7972,2.409],[33.1002,2.409],[33.1002,4.798],[31.7972,4.798],[31.7972,2.409]]},{"layer":"FIX_PANEL","pts":[[33.1221,2.409],[34.4251,2.409],[34.4251,4.798],[33.1221,4.798],[33.1221,2.409]]},{"layer":"FIX_PANEL","pts":[[34.447,2.409],[35.75,2.409],[35.75,4.798],[34.447,4.798],[34.447,2.409]]},{"layer":"FIX_PANEL","pts":[[35.7719,2.409],[37.0749,2.409],[37.0749,4.798],[35.7719,4.798],[35.7719,2.409]]}]},{"name":"FIX_3P_3S_27P","tech":"FIX","tracker_type":"FIX","strings":3,"panels_per_string":27,"total_panels":243,"w":35.75,"h":7.207,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[35.75,0],[35.75,7.207],[0,7.207],[0,0]]},{"layer":"FIX_PANEL","pts":[[0.0,0.0],[1.303,0.0],[1.303,2.389],[0.0,2.389],[0.0,0.0]]},{"layer":"FIX_PANEL","pts":[[1.3249,0.0],[2.6279,0.0],[2.6279,2.389],[1.3249,2.389],[1.3249,0.0]]},{"layer":"FIX_PANEL","pts":[[2.6498,0.0],[3.9528,0.0],[3.9528,2.389],[2.6498,2.389],[2.6498,0.0]]},{"layer":"FIX_PANEL","pts":[[3.9747,0.0],[5.2777,0.0],[5.2777,2.389],[3.9747,2.389],[3.9747,0.0]]},{"layer":"FIX_PANEL","pts":[[5.2995,0.0],[6.6025,0.0],[6.6025,2.389],[5.2995,2.389],[5.2995,0.0]]},{"layer":"FIX_PANEL","pts":[[6.6244,0.0],[7.9274,0.0],[7.9274,2.389],[6.6244,2.389],[6.6244,0.0]]},{"layer":"FIX_PANEL","pts":[[7.9493,0.0],[9.2523,0.0],[9.2523,2.389],[7.9493,2.389],[7.9493,0.0]]},{"layer":"FIX_PANEL","pts":[[9.2742,0.0],[10.5772,0.0],[10.5772,2.389],[9.2742,2.389],[9.2742,0.0]]},{"layer":"FIX_PANEL","pts":[[10.5991,0.0],[11.9021,0.0],[11.9021,2.389],[10.5991,2.389],[10.5991,0.0]]},{"layer":"FIX_PANEL","pts":[[11.924,0.0],[13.227,0.0],[13.227,2.389],[11.924,2.389],[11.924,0.0]]},{"layer":"FIX_PANEL","pts":[[13.2488,0.0],[14.5518,0.0],[14.5518,2.389],[13.2488,2.389],[13.2488,0.0]]},{"layer":"FIX_PANEL","pts":[[14.5737,0.0],[15.8767,0.0],[15.8767,2.389],[14.5737,2.389],[14.5737,0.0]]},{"layer":"FIX_PANEL","pts":[[15.8986,0.0],[17.2016,0.0],[17.2016,2.389],[15.8986,2.389],[15.8986,0.0]]},{"layer":"FIX_PANEL","pts":[[17.2235,0.0],[18.5265,0.0],[18.5265,2.389],[17.2235,2.389],[17.2235,0.0]]},{"layer":"FIX_PANEL","pts":[[18.5484,0.0],[19.8514,0.0],[19.8514,2.389],[18.5484,2.389],[18.5484,0.0]]},{"layer":"FIX_PANEL","pts":[[19.8733,0.0],[21.1763,0.0],[21.1763,2.389],[19.8733,2.389],[19.8733,0.0]]},{"layer":"FIX_PANEL","pts":[[21.1982,0.0],[22.5012,0.0],[22.5012,2.389],[21.1982,2.389],[21.1982,0.0]]},{"layer":"FIX_PANEL","pts":[[22.523,0.0],[23.826,0.0],[23.826,2.389],[22.523,2.389],[22.523,0.0]]},{"layer":"FIX_PANEL","pts":[[23.8479,0.0],[25.1509,0.0],[25.1509,2.389],[23.8479,2.389],[23.8479,0.0]]},{"layer":"FIX_PANEL","pts":[[25.1728,0.0],[26.4758,0.0],[26.4758,2.389],[25.1728,2.389],[25.1728,0.0]]},{"layer":"FIX_PANEL","pts":[[26.4977,0.0],[27.8007,0.0],[27.8007,2.389],[26.4977,2.389],[26.4977,0.0]]},{"layer":"FIX_PANEL","pts":[[27.8226,0.0],[29.1256,0.0],[29.1256,2.389],[27.8226,2.389],[27.8226,0.0]]},{"layer":"FIX_PANEL","pts":[[29.1475,0.0],[30.4505,0.0],[30.4505,2.389],[29.1475,2.389],[29.1475,0.0]]},{"layer":"FIX_PANEL","pts":[[30.4723,0.0],[31.7753,0.0],[31.7753,2.389],[30.4723,2.389],[30.4723,0.0]]},{"layer":"FIX_PANEL","pts":[[31.7972,0.0],[33.1002,0.0],[33.1002,2.389],[31.7972,2.389],[31.7972,0.0]]},{"layer":"FIX_PANEL","pts":[[33.1221,0.0],[34.4251,0.0],[34.4251,2.389],[33.1221,2.389],[33.1221,0.0]]},{"layer":"FIX_PANEL","pts":[[34.447,0.0],[35.75,0.0],[35.75,2.389],[34.447,2.389],[34.447,0.0]]},{"layer":"FIX_PANEL","pts":[[0.0,2.409],[1.303,2.409],[1.303,4.798],[0.0,4.798],[0.0,2.409]]},{"layer":"FIX_PANEL","pts":[[1.3249,2.409],[2.6279,2.409],[2.6279,4.798],[1.3249,4.798],[1.3249,2.409]]},{"layer":"FIX_PANEL","pts":[[2.6498,2.409],[3.9528,2.409],[3.9528,4.798],[2.6498,4.798],[2.6498,2.409]]},{"layer":"FIX_PANEL","pts":[[3.9747,2.409],[5.2777,2.409],[5.2777,4.798],[3.9747,4.798],[3.9747,2.409]]},{"layer":"FIX_PANEL","pts":[[5.2995,2.409],[6.6025,2.409],[6.6025,4.798],[5.2995,4.798],[5.2995,2.409]]},{"layer":"FIX_PANEL","pts":[[6.6244,2.409],[7.9274,2.409],[7.9274,4.798],[6.6244,4.798],[6.6244,2.409]]},{"layer":"FIX_PANEL","pts":[[7.9493,2.409],[9.2523,2.409],[9.2523,4.798],[7.9493,4.798],[7.9493,2.409]]},{"layer":"FIX_PANEL","pts":[[9.2742,2.409],[10.5772,2.409],[10.5772,4.798],[9.2742,4.798],[9.2742,2.409]]},{"layer":"FIX_PANEL","pts":[[10.5991,2.409],[11.9021,2.409],[11.9021,4.798],[10.5991,4.798],[10.5991,2.409]]},{"layer":"FIX_PANEL","pts":[[11.924,2.409],[13.227,2.409],[13.227,4.798],[11.924,4.798],[11.924,2.409]]},{"layer":"FIX_PANEL","pts":[[13.2488,2.409],[14.5518,2.409],[14.5518,4.798],[13.2488,4.798],[13.2488,2.409]]},{"layer":"FIX_PANEL","pts":[[14.5737,2.409],[15.8767,2.409],[15.8767,4.798],[14.5737,4.798],[14.5737,2.409]]},{"layer":"FIX_PANEL","pts":[[15.8986,2.409],[17.2016,2.409],[17.2016,4.798],[15.8986,4.798],[15.8986,2.409]]},{"layer":"FIX_PANEL","pts":[[17.2235,2.409],[18.5265,2.409],[18.5265,4.798],[17.2235,4.798],[17.2235,2.409]]},{"layer":"FIX_PANEL","pts":[[18.5484,2.409],[19.8514,2.409],[19.8514,4.798],[18.5484,4.798],[18.5484,2.409]]},{"layer":"FIX_PANEL","pts":[[19.8733,2.409],[21.1763,2.409],[21.1763,4.798],[19.8733,4.798],[19.8733,2.409]]},{"layer":"FIX_PANEL","pts":[[21.1982,2.409],[22.5012,2.409],[22.5012,4.798],[21.1982,4.798],[21.1982,2.409]]},{"layer":"FIX_PANEL","pts":[[22.523,2.409],[23.826,2.409],[23.826,4.798],[22.523,4.798],[22.523,2.409]]},{"layer":"FIX_PANEL","pts":[[23.8479,2.409],[25.1509,2.409],[25.1509,4.798],[23.8479,4.798],[23.8479,2.409]]},{"layer":"FIX_PANEL","pts":[[25.1728,2.409],[26.4758,2.409],[26.4758,4.798],[25.1728,4.798],[25.1728,2.409]]},{"layer":"FIX_PANEL","pts":[[26.4977,2.409],[27.8007,2.409],[27.8007,4.798],[26.4977,4.798],[26.4977,2.409]]},{"layer":"FIX_PANEL","pts":[[27.8226,2.409],[29.1256,2.409],[29.1256,4.798],[27.8226,4.798],[27.8226,2.409]]},{"layer":"FIX_PANEL","pts":[[29.1475,2.409],[30.4505,2.409],[30.4505,4.798],[29.1475,4.798],[29.1475,2.409]]},{"layer":"FIX_PANEL","pts":[[30.4723,2.409],[31.7753,2.409],[31.7753,4.798],[30.4723,4.798],[30.4723,2.409]]},{"layer":"FIX_PANEL","pts":[[31.7972,2.409],[33.1002,2.409],[33.1002,4.798],[31.7972,4.798],[31.7972,2.409]]},{"layer":"FIX_PANEL","pts":[[33.1221,2.409],[34.4251,2.409],[34.4251,4.798],[33.1221,4.798],[33.1221,2.409]]},{"layer":"FIX_PANEL","pts":[[34.447,2.409],[35.75,2.409],[35.75,4.798],[34.447,4.798],[34.447,2.409]]},{"layer":"FIX_PANEL","pts":[[0.0,4.818],[1.303,4.818],[1.303,7.207],[0.0,7.207],[0.0,4.818]]},{"layer":"FIX_PANEL","pts":[[1.3249,4.818],[2.6279,4.818],[2.6279,7.207],[1.3249,7.207],[1.3249,4.818]]},{"layer":"FIX_PANEL","pts":[[2.6498,4.818],[3.9528,4.818],[3.9528,7.207],[2.6498,7.207],[2.6498,4.818]]},{"layer":"FIX_PANEL","pts":[[3.9747,4.818],[5.2777,4.818],[5.2777,7.207],[3.9747,7.207],[3.9747,4.818]]},{"layer":"FIX_PANEL","pts":[[5.2995,4.818],[6.6025,4.818],[6.6025,7.207],[5.2995,7.207],[5.2995,4.818]]},{"layer":"FIX_PANEL","pts":[[6.6244,4.818],[7.9274,4.818],[7.9274,7.207],[6.6244,7.207],[6.6244,4.818]]},{"layer":"FIX_PANEL","pts":[[7.9493,4.818],[9.2523,4.818],[9.2523,7.207],[7.9493,7.207],[7.9493,4.818]]},{"layer":"FIX_PANEL","pts":[[9.2742,4.818],[10.5772,4.818],[10.5772,7.207],[9.2742,7.207],[9.2742,4.818]]},{"layer":"FIX_PANEL","pts":[[10.5991,4.818],[11.9021,4.818],[11.9021,7.207],[10.5991,7.207],[10.5991,4.818]]},{"layer":"FIX_PANEL","pts":[[11.924,4.818],[13.227,4.818],[13.227,7.207],[11.924,7.207],[11.924,4.818]]},{"layer":"FIX_PANEL","pts":[[13.2488,4.818],[14.5518,4.818],[14.5518,7.207],[13.2488,7.207],[13.2488,4.818]]},{"layer":"FIX_PANEL","pts":[[14.5737,4.818],[15.8767,4.818],[15.8767,7.207],[14.5737,7.207],[14.5737,4.818]]},{"layer":"FIX_PANEL","pts":[[15.8986,4.818],[17.2016,4.818],[17.2016,7.207],[15.8986,7.207],[15.8986,4.818]]},{"layer":"FIX_PANEL","pts":[[17.2235,4.818],[18.5265,4.818],[18.5265,7.207],[17.2235,7.207],[17.2235,4.818]]},{"layer":"FIX_PANEL","pts":[[18.5484,4.818],[19.8514,4.818],[19.8514,7.207],[18.5484,7.207],[18.5484,4.818]]},{"layer":"FIX_PANEL","pts":[[19.8733,4.818],[21.1763,4.818],[21.1763,7.207],[19.8733,7.207],[19.8733,4.818]]},{"layer":"FIX_PANEL","pts":[[21.1982,4.818],[22.5012,4.818],[22.5012,7.207],[21.1982,7.207],[21.1982,4.818]]},{"layer":"FIX_PANEL","pts":[[22.523,4.818],[23.826,4.818],[23.826,7.207],[22.523,7.207],[22.523,4.818]]},{"layer":"FIX_PANEL","pts":[[23.8479,4.818],[25.1509,4.818],[25.1509,7.207],[23.8479,7.207],[23.8479,4.818]]},{"layer":"FIX_PANEL","pts":[[25.1728,4.818],[26.4758,4.818],[26.4758,7.207],[25.1728,7.207],[25.1728,4.818]]},{"layer":"FIX_PANEL","pts":[[26.4977,4.818],[27.8007,4.818],[27.8007,7.207],[26.4977,7.207],[26.4977,4.818]]},{"layer":"FIX_PANEL","pts":[[27.8226,4.818],[29.1256,4.818],[29.1256,7.207],[27.8226,7.207],[27.8226,4.818]]},{"layer":"FIX_PANEL","pts":[[29.1475,4.818],[30.4505,4.818],[30.4505,7.207],[29.1475,7.207],[29.1475,4.818]]},{"layer":"FIX_PANEL","pts":[[30.4723,4.818],[31.7753,4.818],[31.7753,7.207],[30.4723,7.207],[30.4723,4.818]]},{"layer":"FIX_PANEL","pts":[[31.7972,4.818],[33.1002,4.818],[33.1002,7.207],[31.7972,7.207],[31.7972,4.818]]},{"layer":"FIX_PANEL","pts":[[33.1221,4.818],[34.4251,4.818],[34.4251,7.207],[33.1221,7.207],[33.1221,4.818]]},{"layer":"FIX_PANEL","pts":[[34.447,4.818],[35.75,4.818],[35.75,7.207],[34.447,7.207],[34.447,4.818]]}]},{"name":"FIX_3P_3S_28P","tech":"FIX","tracker_type":"FIX","strings":3,"panels_per_string":28,"total_panels":252,"w":37.0749,"h":7.207,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[37.07488461538461,0],[37.07488461538461,7.207],[0,7.207],[0,0]]},{"layer":"FIX_PANEL","pts":[[0.0,0.0],[1.303,0.0],[1.303,2.389],[0.0,2.389],[0.0,0.0]]},{"layer":"FIX_PANEL","pts":[[1.3249,0.0],[2.6279,0.0],[2.6279,2.389],[1.3249,2.389],[1.3249,0.0]]},{"layer":"FIX_PANEL","pts":[[2.6498,0.0],[3.9528,0.0],[3.9528,2.389],[2.6498,2.389],[2.6498,0.0]]},{"layer":"FIX_PANEL","pts":[[3.9747,0.0],[5.2777,0.0],[5.2777,2.389],[3.9747,2.389],[3.9747,0.0]]},{"layer":"FIX_PANEL","pts":[[5.2995,0.0],[6.6025,0.0],[6.6025,2.389],[5.2995,2.389],[5.2995,0.0]]},{"layer":"FIX_PANEL","pts":[[6.6244,0.0],[7.9274,0.0],[7.9274,2.389],[6.6244,2.389],[6.6244,0.0]]},{"layer":"FIX_PANEL","pts":[[7.9493,0.0],[9.2523,0.0],[9.2523,2.389],[7.9493,2.389],[7.9493,0.0]]},{"layer":"FIX_PANEL","pts":[[9.2742,0.0],[10.5772,0.0],[10.5772,2.389],[9.2742,2.389],[9.2742,0.0]]},{"layer":"FIX_PANEL","pts":[[10.5991,0.0],[11.9021,0.0],[11.9021,2.389],[10.5991,2.389],[10.5991,0.0]]},{"layer":"FIX_PANEL","pts":[[11.924,0.0],[13.227,0.0],[13.227,2.389],[11.924,2.389],[11.924,0.0]]},{"layer":"FIX_PANEL","pts":[[13.2488,0.0],[14.5518,0.0],[14.5518,2.389],[13.2488,2.389],[13.2488,0.0]]},{"layer":"FIX_PANEL","pts":[[14.5737,0.0],[15.8767,0.0],[15.8767,2.389],[14.5737,2.389],[14.5737,0.0]]},{"layer":"FIX_PANEL","pts":[[15.8986,0.0],[17.2016,0.0],[17.2016,2.389],[15.8986,2.389],[15.8986,0.0]]},{"layer":"FIX_PANEL","pts":[[17.2235,0.0],[18.5265,0.0],[18.5265,2.389],[17.2235,2.389],[17.2235,0.0]]},{"layer":"FIX_PANEL","pts":[[18.5484,0.0],[19.8514,0.0],[19.8514,2.389],[18.5484,2.389],[18.5484,0.0]]},{"layer":"FIX_PANEL","pts":[[19.8733,0.0],[21.1763,0.0],[21.1763,2.389],[19.8733,2.389],[19.8733,0.0]]},{"layer":"FIX_PANEL","pts":[[21.1982,0.0],[22.5012,0.0],[22.5012,2.389],[21.1982,2.389],[21.1982,0.0]]},{"layer":"FIX_PANEL","pts":[[22.523,0.0],[23.826,0.0],[23.826,2.389],[22.523,2.389],[22.523,0.0]]},{"layer":"FIX_PANEL","pts":[[23.8479,0.0],[25.1509,0.0],[25.1509,2.389],[23.8479,2.389],[23.8479,0.0]]},{"layer":"FIX_PANEL","pts":[[25.1728,0.0],[26.4758,0.0],[26.4758,2.389],[25.1728,2.389],[25.1728,0.0]]},{"layer":"FIX_PANEL","pts":[[26.4977,0.0],[27.8007,0.0],[27.8007,2.389],[26.4977,2.389],[26.4977,0.0]]},{"layer":"FIX_PANEL","pts":[[27.8226,0.0],[29.1256,0.0],[29.1256,2.389],[27.8226,2.389],[27.8226,0.0]]},{"layer":"FIX_PANEL","pts":[[29.1475,0.0],[30.4505,0.0],[30.4505,2.389],[29.1475,2.389],[29.1475,0.0]]},{"layer":"FIX_PANEL","pts":[[30.4723,0.0],[31.7753,0.0],[31.7753,2.389],[30.4723,2.389],[30.4723,0.0]]},{"layer":"FIX_PANEL","pts":[[31.7972,0.0],[33.1002,0.0],[33.1002,2.389],[31.7972,2.389],[31.7972,0.0]]},{"layer":"FIX_PANEL","pts":[[33.1221,0.0],[34.4251,0.0],[34.4251,2.389],[33.1221,2.389],[33.1221,0.0]]},{"layer":"FIX_PANEL","pts":[[34.447,0.0],[35.75,0.0],[35.75,2.389],[34.447,2.389],[34.447,0.0]]},{"layer":"FIX_PANEL","pts":[[35.7719,0.0],[37.0749,0.0],[37.0749,2.389],[35.7719,2.389],[35.7719,0.0]]},{"layer":"FIX_PANEL","pts":[[0.0,2.409],[1.303,2.409],[1.303,4.798],[0.0,4.798],[0.0,2.409]]},{"layer":"FIX_PANEL","pts":[[1.3249,2.409],[2.6279,2.409],[2.6279,4.798],[1.3249,4.798],[1.3249,2.409]]},{"layer":"FIX_PANEL","pts":[[2.6498,2.409],[3.9528,2.409],[3.9528,4.798],[2.6498,4.798],[2.6498,2.409]]},{"layer":"FIX_PANEL","pts":[[3.9747,2.409],[5.2777,2.409],[5.2777,4.798],[3.9747,4.798],[3.9747,2.409]]},{"layer":"FIX_PANEL","pts":[[5.2995,2.409],[6.6025,2.409],[6.6025,4.798],[5.2995,4.798],[5.2995,2.409]]},{"layer":"FIX_PANEL","pts":[[6.6244,2.409],[7.9274,2.409],[7.9274,4.798],[6.6244,4.798],[6.6244,2.409]]},{"layer":"FIX_PANEL","pts":[[7.9493,2.409],[9.2523,2.409],[9.2523,4.798],[7.9493,4.798],[7.9493,2.409]]},{"layer":"FIX_PANEL","pts":[[9.2742,2.409],[10.5772,2.409],[10.5772,4.798],[9.2742,4.798],[9.2742,2.409]]},{"layer":"FIX_PANEL","pts":[[10.5991,2.409],[11.9021,2.409],[11.9021,4.798],[10.5991,4.798],[10.5991,2.409]]},{"layer":"FIX_PANEL","pts":[[11.924,2.409],[13.227,2.409],[13.227,4.798],[11.924,4.798],[11.924,2.409]]},{"layer":"FIX_PANEL","pts":[[13.2488,2.409],[14.5518,2.409],[14.5518,4.798],[13.2488,4.798],[13.2488,2.409]]},{"layer":"FIX_PANEL","pts":[[14.5737,2.409],[15.8767,2.409],[15.8767,4.798],[14.5737,4.798],[14.5737,2.409]]},{"layer":"FIX_PANEL","pts":[[15.8986,2.409],[17.2016,2.409],[17.2016,4.798],[15.8986,4.798],[15.8986,2.409]]},{"layer":"FIX_PANEL","pts":[[17.2235,2.409],[18.5265,2.409],[18.5265,4.798],[17.2235,4.798],[17.2235,2.409]]},{"layer":"FIX_PANEL","pts":[[18.5484,2.409],[19.8514,2.409],[19.8514,4.798],[18.5484,4.798],[18.5484,2.409]]},{"layer":"FIX_PANEL","pts":[[19.8733,2.409],[21.1763,2.409],[21.1763,4.798],[19.8733,4.798],[19.8733,2.409]]},{"layer":"FIX_PANEL","pts":[[21.1982,2.409],[22.5012,2.409],[22.5012,4.798],[21.1982,4.798],[21.1982,2.409]]},{"layer":"FIX_PANEL","pts":[[22.523,2.409],[23.826,2.409],[23.826,4.798],[22.523,4.798],[22.523,2.409]]},{"layer":"FIX_PANEL","pts":[[23.8479,2.409],[25.1509,2.409],[25.1509,4.798],[23.8479,4.798],[23.8479,2.409]]},{"layer":"FIX_PANEL","pts":[[25.1728,2.409],[26.4758,2.409],[26.4758,4.798],[25.1728,4.798],[25.1728,2.409]]},{"layer":"FIX_PANEL","pts":[[26.4977,2.409],[27.8007,2.409],[27.8007,4.798],[26.4977,4.798],[26.4977,2.409]]},{"layer":"FIX_PANEL","pts":[[27.8226,2.409],[29.1256,2.409],[29.1256,4.798],[27.8226,4.798],[27.8226,2.409]]},{"layer":"FIX_PANEL","pts":[[29.1475,2.409],[30.4505,2.409],[30.4505,4.798],[29.1475,4.798],[29.1475,2.409]]},{"layer":"FIX_PANEL","pts":[[30.4723,2.409],[31.7753,2.409],[31.7753,4.798],[30.4723,4.798],[30.4723,2.409]]},{"layer":"FIX_PANEL","pts":[[31.7972,2.409],[33.1002,2.409],[33.1002,4.798],[31.7972,4.798],[31.7972,2.409]]},{"layer":"FIX_PANEL","pts":[[33.1221,2.409],[34.4251,2.409],[34.4251,4.798],[33.1221,4.798],[33.1221,2.409]]},{"layer":"FIX_PANEL","pts":[[34.447,2.409],[35.75,2.409],[35.75,4.798],[34.447,4.798],[34.447,2.409]]},{"layer":"FIX_PANEL","pts":[[35.7719,2.409],[37.0749,2.409],[37.0749,4.798],[35.7719,4.798],[35.7719,2.409]]},{"layer":"FIX_PANEL","pts":[[0.0,4.818],[1.303,4.818],[1.303,7.207],[0.0,7.207],[0.0,4.818]]},{"layer":"FIX_PANEL","pts":[[1.3249,4.818],[2.6279,4.818],[2.6279,7.207],[1.3249,7.207],[1.3249,4.818]]},{"layer":"FIX_PANEL","pts":[[2.6498,4.818],[3.9528,4.818],[3.9528,7.207],[2.6498,7.207],[2.6498,4.818]]},{"layer":"FIX_PANEL","pts":[[3.9747,4.818],[5.2777,4.818],[5.2777,7.207],[3.9747,7.207],[3.9747,4.818]]},{"layer":"FIX_PANEL","pts":[[5.2995,4.818],[6.6025,4.818],[6.6025,7.207],[5.2995,7.207],[5.2995,4.818]]},{"layer":"FIX_PANEL","pts":[[6.6244,4.818],[7.9274,4.818],[7.9274,7.207],[6.6244,7.207],[6.6244,4.818]]},{"layer":"FIX_PANEL","pts":[[7.9493,4.818],[9.2523,4.818],[9.2523,7.207],[7.9493,7.207],[7.9493,4.818]]},{"layer":"FIX_PANEL","pts":[[9.2742,4.818],[10.5772,4.818],[10.5772,7.207],[9.2742,7.207],[9.2742,4.818]]},{"layer":"FIX_PANEL","pts":[[10.5991,4.818],[11.9021,4.818],[11.9021,7.207],[10.5991,7.207],[10.5991,4.818]]},{"layer":"FIX_PANEL","pts":[[11.924,4.818],[13.227,4.818],[13.227,7.207],[11.924,7.207],[11.924,4.818]]},{"layer":"FIX_PANEL","pts":[[13.2488,4.818],[14.5518,4.818],[14.5518,7.207],[13.2488,7.207],[13.2488,4.818]]},{"layer":"FIX_PANEL","pts":[[14.5737,4.818],[15.8767,4.818],[15.8767,7.207],[14.5737,7.207],[14.5737,4.818]]},{"layer":"FIX_PANEL","pts":[[15.8986,4.818],[17.2016,4.818],[17.2016,7.207],[15.8986,7.207],[15.8986,4.818]]},{"layer":"FIX_PANEL","pts":[[17.2235,4.818],[18.5265,4.818],[18.5265,7.207],[17.2235,7.207],[17.2235,4.818]]},{"layer":"FIX_PANEL","pts":[[18.5484,4.818],[19.8514,4.818],[19.8514,7.207],[18.5484,7.207],[18.5484,4.818]]},{"layer":"FIX_PANEL","pts":[[19.8733,4.818],[21.1763,4.818],[21.1763,7.207],[19.8733,7.207],[19.8733,4.818]]},{"layer":"FIX_PANEL","pts":[[21.1982,4.818],[22.5012,4.818],[22.5012,7.207],[21.1982,7.207],[21.1982,4.818]]},{"layer":"FIX_PANEL","pts":[[22.523,4.818],[23.826,4.818],[23.826,7.207],[22.523,7.207],[22.523,4.818]]},{"layer":"FIX_PANEL","pts":[[23.8479,4.818],[25.1509,4.818],[25.1509,7.207],[23.8479,7.207],[23.8479,4.818]]},{"layer":"FIX_PANEL","pts":[[25.1728,4.818],[26.4758,4.818],[26.4758,7.207],[25.1728,7.207],[25.1728,4.818]]},{"layer":"FIX_PANEL","pts":[[26.4977,4.818],[27.8007,4.818],[27.8007,7.207],[26.4977,7.207],[26.4977,4.818]]},{"layer":"FIX_PANEL","pts":[[27.8226,4.818],[29.1256,4.818],[29.1256,7.207],[27.8226,7.207],[27.8226,4.818]]},{"layer":"FIX_PANEL","pts":[[29.1475,4.818],[30.4505,4.818],[30.4505,7.207],[29.1475,7.207],[29.1475,4.818]]},{"layer":"FIX_PANEL","pts":[[30.4723,4.818],[31.7753,4.818],[31.7753,7.207],[30.4723,7.207],[30.4723,4.818]]},{"layer":"FIX_PANEL","pts":[[31.7972,4.818],[33.1002,4.818],[33.1002,7.207],[31.7972,7.207],[31.7972,4.818]]},{"layer":"FIX_PANEL","pts":[[33.1221,4.818],[34.4251,4.818],[34.4251,7.207],[33.1221,7.207],[33.1221,4.818]]},{"layer":"FIX_PANEL","pts":[[34.447,4.818],[35.75,4.818],[35.75,7.207],[34.447,7.207],[34.447,4.818]]},{"layer":"FIX_PANEL","pts":[[35.7719,4.818],[37.0749,4.818],[37.0749,7.207],[35.7719,7.207],[35.7719,4.818]]}]}];
+var selectedPPS = 28;
+
+function setPPS(n, el) {
+  selectedPPS = n;
+  document.querySelectorAll('#pps-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  updateBlockPreview();
+}
+
+function getActiveBlocks() {
+  var isSAT = (tech !== 'fixed');
+  var trackerType = (trk === '2p') ? '2P' : '1P';
+  return BLOCK_LIBRARY.filter(function(b) {
+    if (isSAT) return b.tech === 'SAT' && b.tracker_type === trackerType;
+    return b.tech === 'FIX';
+  }).sort(function(a,b){ return b.total_panels - a.total_panels; });
+}
+
+function updateBlockPreview() {
+  var blocks = getActiveBlocks();
+  var el = document.getElementById('block-preview');
+  if (!el) return;
+  if (!blocks.length) { el.innerHTML = 'אין בלוקים זמינים'; return; }
+  var html = '<strong>בלוקים פעילים:</strong><br>';
+  blocks.forEach(function(b) {
+    html += '&#9658; ' + b.name + ' &mdash; ' + b.total_panels + ' פאנלים, ' + b.w.toFixed(1) + 'x' + b.h.toFixed(1) + 'm<br>';
+  });
+  el.innerHTML = html;
+}
+// ER Block - MAZEV only (clean electrical room outline)
+var ER_BLOCK = (function(){
+  // All dimensions in METERS, from image
+  // Total: 10.55m wide x 3.9m tall
+  // Wall thickness: 0.15m
+  // Left room: 4.10m, Right room: 6.30m
+  // Door width: ~1.0m (3 at bottom, 1 at left side)
+  var W=10.55, H=3.9, wt=0.15;
+  var divX=4.10+wt; // dividing wall at 4.25m
+  // Paving (אבנים משלבות) margin around building
+  var pad=1.5;
+
+  function rect(x,y,w,h,layer){
+    return {layer:layer,pts:[[x,y],[x+w,y],[x+w,y+h],[x,y+h],[x,y]]};
+  }
+  function arc(cx,cy,r,startDeg,endDeg,layer){
+    var pts=[]; var steps=16;
+    var s=startDeg*Math.PI/180, e=endDeg*Math.PI/180;
+    for(var i=0;i<=steps;i++){
+      var a=s+(e-s)*i/steps;
+      pts.push([Math.round((cx+Math.cos(a)*r)*1000)/1000,
+                Math.round((cy+Math.sin(a)*r)*1000)/1000]);
+    }
+    return {layer:layer,pts:pts};
+  }
+
+  var polys=[], lns=[];
+
+  // Outer wall (double line - outer)
+  polys.push(rect(0,0,W,H,'ELECTRICAL_ROOM'));
+  // Inner wall
+  polys.push(rect(wt,wt,W-2*wt,H-2*wt,'ELECTRICAL_ROOM'));
+
+  // Internal dividing wall (vertical)
+  lns.push({layer:'ELECTRICAL_ROOM',x1:divX,y1:0,x2:divX,y2:H});
+  lns.push({layer:'ELECTRICAL_ROOM',x1:divX+wt,y1:0,x2:divX+wt,y2:H});
+
+  // Windows left room: 2 windows on top wall
+  var winW=0.8, winH=0.1;
+  polys.push(rect(0.8,H-wt,winW,wt,'ELECTRICAL_ROOM')); // window 1 top
+  polys.push(rect(2.2,H-wt,winW,wt,'ELECTRICAL_ROOM')); // window 2 top
+
+  // Window right room: 1 window on right wall
+  polys.push(rect(W-wt,1.2,wt,1.0,'ELECTRICAL_ROOM'));
+
+  // Door left side (arc)
+  polys.push(arc(wt,1.8,0.9,0,90,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:wt,y1:1.8,x2:wt,y2:2.7});
+
+  // 3 doors at bottom
+  var d1x=1.5, d2x=4.6, d3x=7.5, dw=0.9;
+  polys.push(arc(d1x,0,dw,-90,0,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:d1x,y1:0,x2:d1x+dw,y2:0});
+  polys.push(arc(d2x,0,dw,-90,0,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:d2x,y1:0,x2:d2x+dw,y2:0});
+  polys.push(arc(d3x,0,dw,-90,0,'ELECTRICAL_ROOM'));
+  lns.push({layer:'ELECTRICAL_ROOM',x1:d3x,y1:0,x2:d3x+dw,y2:0});
+
+  // Paving border (אבנים משלבות outline)
+  polys.push(rect(-pad,-pad,W+2*pad,H+2*pad,'PAVING'));
+
+  return {w:W, h:H, polys:polys, lines:lns};
+})();
+var erMode = false;
+var electricalRoom = null;
+var lastPoly = null;
+var lastRes = null;
+
+// BESS state
+var bessCoupling = 'ac';
+var bessUnits = []; // array of placed BESS unit polygons
+var bessRoad = {top:true, bot:true, left:false, right:true};
+
+function setBessCoupling(v, el) {
+  bessCoupling = v;
+  document.querySelectorAll('#bess-coupling-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
+
+function toggleRoad(side, el) {
+  bessRoad[side] = !bessRoad[side];
+  el.classList.toggle('on', bessRoad[side]);
+}
+
+// Compute one BESS unit footprint (with clearance) centered at cx,cy rotated at angle
+// Returns array of exclusion polygons (for panel removal) and draw polygons
+function bessUnitGeometry(cx, cy, angle) {
+  var contW = parseFloat(document.getElementById('bess-cont-w').value)||5.1;
+  var contL = parseFloat(document.getElementById('bess-cont-l').value)||12.5;
+  var skidW = parseFloat(document.getElementById('bess-skid-w').value)||2;
+  var skidL = parseFloat(document.getElementById('bess-skid-l').value)||12;
+  var clr   = parseFloat(document.getElementById('bess-clear').value)||3.5;
+  var sclr  = parseFloat(document.getElementById('bess-skid-clear').value)||0.5;
+  var road  = 5;
+
+  // Layout along X axis (angle=0): cont | skid | cont
+  // Total width = contW+sclr + skidW + sclr+contW
+  // Total length = max(contL, skidL)
+  var totalW = contW + sclr + skidW + sclr + contW;
+  var totalL = Math.max(contL, skidL);
+
+  // With clearance
+  var clrW = totalW + 2*clr;
+  var clrL = totalL + 2*clr;
+
+  // Road addition
+  var roadTop    = bessRoad.top  ? road : 0;
+  var roadBot    = bessRoad.bot  ? road : 0;
+  var roadLeft   = bessRoad.left ? road : 0;
+  var roadRight  = bessRoad.right? road : 0;
+
+  var fullW = clrW + roadLeft + roadRight;
+  var fullL = clrL + roadTop  + roadBot;
+
+  function rotPt(lx, ly) {
+    var cos=Math.cos(angle), sin=Math.sin(angle);
+    return [cx + lx*cos - ly*sin, cy + lx*sin + ly*cos];
+  }
+
+  function makeRect(x, y, w, l) {
+    // centered rect
+    var hx=w/2, hy=l/2;
+    return [rotPt(x-hx,y-hy),rotPt(x+hx,y-hy),rotPt(x+hx,y+hy),rotPt(x-hx,y+hy),rotPt(x-hx,y-hy)];
+  }
+
+  // Exclusion = full footprint with road
+  var exclusion = makeRect(0, 0, fullW, fullL);
+
+  // Draw polys: two containers + skid + clearance outline
+  var cont1X = -(sclr/2 + skidW/2 + contW/2);
+  var cont2X =  (sclr/2 + skidW/2 + contW/2);
+  var cont1 = makeRect(cont1X, 0, contW, contL);
+  var cont2 = makeRect(cont2X, 0, contW, contL);
+  var skid  = makeRect(0, 0, skidW, skidL);
+  var clrBox = makeRect(0, 0, clrW, clrL);
+
+  // Road strips
+  var roads = [];
+  if (bessRoad.top)   roads.push(makeRect(0,  (clrL/2 + roadTop/2),   clrW, roadTop));
+  if (bessRoad.bot)   roads.push(makeRect(0, -(clrL/2 + roadBot/2),   clrW, roadBot));
+  if (bessRoad.left)  roads.push(makeRect(-(clrW/2+roadLeft/2), 0, roadLeft, clrL));
+  if (bessRoad.right) roads.push(makeRect( (clrW/2+roadRight/2),0, roadRight,clrL));
+
+  return {
+    exclusion: exclusion,
+    drawPolys: [cont1, cont2, skid, clrBox].concat(roads),
+    cont1: cont1, cont2: cont2, skid: skid,
+    roads: roads, clrBox: clrBox,
+    totalW: fullW, totalL: fullL
+  };
+}
+
+// Place BESS units based on coupling type
+function placeBess() {
+  if (!lastPoly) return;
+  var count = parseInt(document.getElementById('bess-count').value)||1;
+  bessUnits = [];
+
+  if (bessCoupling === 'ac') {
+    // AC: place next to electrical room
+    if (!electricalRoom) { alert('יש למקם חדר חשמל תחילה לAC Coupling'); return; }
+    var er = electricalRoom;
+    var angle = er.angle;
+    var geo = bessUnitGeometry(0, 0, 0); // temp to get size
+    var spacing = geo.totalW;
+    // Place units side by side next to ER
+    var startOffset = -(count-1)*spacing/2;
+    for (var i=0; i<count; i++) {
+      var offset = startOffset + i*spacing;
+      // Place on the inward side of ER (perpendicular to edge)
+      var nx = er.inNx, ny = er.inNy;
+      var erH = ER_BLOCK.h;
+      var dist = erH/2 + geo.totalL/2 + 2;
+      var cx = er.worldX + nx*dist + Math.cos(angle)*offset;
+      var cy = er.worldY + ny*dist + Math.sin(angle)*offset;
+      bessUnits.push({cx:cx, cy:cy, angle:angle});
+    }
+  } else {
+    // DC: distribute evenly across polygon
+    var c = centroid(lastPoly);
+    var b = {mnx:Infinity,mny:Infinity,mxx:-Infinity,mxy:-Infinity};
+    lastPoly.forEach(function(p){
+      b.mnx=Math.min(b.mnx,p[0]); b.mny=Math.min(b.mny,p[1]);
+      b.mxx=Math.max(b.mxx,p[0]); b.mxy=Math.max(b.mxy,p[1]);
+    });
+    var geo2 = bessUnitGeometry(0,0,0);
+    var step = (b.mxx-b.mnx) / (count+1);
+    for (var i=0; i<count; i++) {
+      var cx2 = b.mnx + step*(i+1);
+      var cy2 = c[1];
+      bessUnits.push({cx:cx2, cy:cy2, angle:0});
+    }
+  }
+
+  document.getElementById('bess-placed').classList.add('show');
+  autoRecalc();
+}
+
+function clearBess() {
+  bessUnits = [];
+  document.getElementById('bess-placed').classList.remove('show');
+  autoRecalc();
+}
+
+// Get all BESS exclusion polygons
+function bessExclusionPolys() {
+  var polys = [];
+  bessUnits.forEach(function(u) {
+    var g = bessUnitGeometry(u.cx, u.cy, u.angle);
+    polys.push(g.exclusion);
+  });
+  return polys;
+}
+
+function autoRecalc() {
+  if (!lastPoly) return;
+  try {
+    var res = computeLayout(lastPoly);
+    lastRes = res;
+    var dxf = writeDxf(res, lastPoly);
+    resultBlob = new Blob([dxf], {type:'application/dxf'});
+    document.getElementById('r-tables').textContent = res.tables.length;
+    document.getElementById('r-panels').textContent = res.totalPanels;
+    document.getElementById('r-kw').textContent = res.kw.toFixed(1);
+    var rb = document.getElementById('result-box');
+    rb.classList.add('show');
+    rb.style.transition='background .15s';
+    rb.style.background='#b5d9c5';
+    setTimeout(function(){rb.style.background='';},400);
+    drawPreview(res, lastPoly);
+    document.getElementById('preview-wrap').classList.add('show');
+  } catch(e) { if(lastRes) drawPreview(lastRes, lastPoly); }
+}
+
+function setTech(v, el) {
+  tech = v;
+  document.querySelectorAll('#tech-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  updateBlockPreview();
+  var isSat = (v === 'sat');
+  document.getElementById('sat-box').style.display = isSat ? 'block' : 'none';
+  document.getElementById('tilt').disabled = isSat;
+  document.getElementById('tilt-note').style.display = isSat ? 'block' : 'none';
+}
+
+function setTrk(v, el) {
+  trk = v;
+  updateBlockPreview();
+  document.querySelectorAll('#trk-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
+
+function setOrient(v, el) {
+  orient = v;
+  document.querySelectorAll('#orient-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
+
+var alignMode = 'south';
+function setAlign(v, el) {
+  alignMode = v;
+  document.querySelectorAll('#align-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('azimuth-wrap').style.opacity = (v==='polygon') ? '0.35' : '1';
+  document.getElementById('azimuth').disabled = (v==='polygon');
+}
+
+function fv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function iv(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+var dz = document.getElementById('drop-zone');
+var fi = document.getElementById('fi');
+
+dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', function(){ dz.classList.remove('over'); });
+dz.addEventListener('drop', function(e){
+  e.preventDefault(); dz.classList.remove('over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+fi.addEventListener('change', function(e){
+  if (e.target.files[0]) setFile(e.target.files[0]);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('file-name').textContent = f.name;
+  document.getElementById('gen-btn').disabled = false;
+  hideAll();
+}
+
+function hideAll() {
+  document.getElementById('result-box').classList.remove('show');
+  document.getElementById('error-box').classList.remove('show');
+  document.getElementById('spinner').classList.remove('show');
+  document.getElementById('preview-wrap').classList.remove('show');
+}
+
+function showErr(msg) {
+  var el = document.getElementById('error-box');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+// ── DXF PARSER ──────────────────────────────────────────────────
+function parseDxf(text) {
+  var raw = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  var lines = raw.split('\n');
+
+  var pairs = [];
+  for (var i = 0; i + 1 < lines.length; i += 2) {
+    var code = lines[i].trim();
+    var val  = lines[i+1].trim();
+    pairs.push([code, val]);
+  }
+
+  var polys = [];
+  var idx = 0;
+
+  while (idx < pairs.length) {
+    var code = pairs[idx][0];
+    var val  = pairs[idx][1];
+
+    if (code === '0' && val === 'LWPOLYLINE') {
+      var xs = [], ys = [];
+      idx++;
+      while (idx < pairs.length && pairs[idx][0] !== '0') {
+        var c = pairs[idx][0];
+        var v = pairs[idx][1];
+        if (c === '10') xs.push(parseFloat(v));
+        else if (c === '20') ys.push(parseFloat(v));
+        idx++;
+      }
+      var pts = [];
+      for (var k = 0; k < Math.min(xs.length, ys.length); k++) {
+        pts.push([xs[k], ys[k]]);
+      }
+      if (pts.length >= 3) polys.push(pts);
+
+    } else if (code === '0' && val === 'POLYLINE') {
+      var pts2 = [];
+      idx++;
+      while (idx < pairs.length) {
+        if (pairs[idx][0] === '0' && pairs[idx][1] === 'VERTEX') {
+          var vx = null, vy = null;
+          idx++;
+          while (idx < pairs.length && pairs[idx][0] !== '0') {
+            if (pairs[idx][0] === '10') vx = parseFloat(pairs[idx][1]);
+            else if (pairs[idx][0] === '20') vy = parseFloat(pairs[idx][1]);
+            idx++;
+          }
+          if (vx !== null && vy !== null) pts2.push([vx, vy]);
+        } else if (pairs[idx][0] === '0' && pairs[idx][1] === 'SEQEND') {
+          idx++; break;
+        } else {
+          idx++;
+        }
+      }
+      if (pts2.length >= 3) polys.push(pts2);
+
+    } else {
+      idx++;
+    }
+  }
+
+  if (!polys.length) {
+    throw new Error('לא נמצא פולגון בקובץ.\nודא שהקובץ נשמר כ-DXF מ-AutoCAD.');
+  }
+
+  polys.sort(function(a, b) {
+    function area(p) {
+      var xs = p.map(function(q){return q[0];}),
+          ys = p.map(function(q){return q[1];});
+      return (Math.max.apply(null,xs)-Math.min.apply(null,xs)) *
+             (Math.max.apply(null,ys)-Math.min.apply(null,ys));
+    }
+    return area(b) - area(a);
+  });
+  return polys[0];
+}
+
+// ── GEOMETRY ────────────────────────────────────────────────────
+function rot(x, y, cx, cy, r) {
+  var dx = x-cx, dy = y-cy;
+  return [cx + dx*Math.cos(r) - dy*Math.sin(r),
+          cy + dx*Math.sin(r) + dy*Math.cos(r)];
+}
+
+function bbox(pts) {
+  var xs = pts.map(function(p){return p[0];}),
+      ys = pts.map(function(p){return p[1];});
+  return { mnx:Math.min.apply(null,xs), mny:Math.min.apply(null,ys),
+           mxx:Math.max.apply(null,xs), mxy:Math.max.apply(null,ys) };
+}
+
+function centroid(pts) {
+  var sx = 0, sy = 0;
+  for (var i=0;i<pts.length;i++){sx+=pts[i][0];sy+=pts[i][1];}
+  return [sx/pts.length, sy/pts.length];
+}
+
+function pip(px, py, poly) {
+  var inside = false;
+  for (var i=0, j=poly.length-1; i<poly.length; j=i++) {
+    var xi=poly[i][0], yi=poly[i][1], xj=poly[j][0], yj=poly[j][1];
+    if (((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi))
+      inside = !inside;
+  }
+  return inside;
+}
+
+function shrink(pts, d) {
+  // True inward offset per edge
+  var n = pts.length;
+  var result = [];
+  // detect winding (CW or CCW)
+  var area = 0;
+  for (var i=0; i<n; i++) {
+    var j=(i+1)%n;
+    area += pts[i][0]*pts[j][1] - pts[j][0]*pts[i][1];
+  }
+  var cw = area < 0; // clockwise if negative
+  for (var i=0; i<n; i++) {
+    var prev = pts[(i-1+n)%n];
+    var cur  = pts[i];
+    var next = pts[(i+1)%n];
+    // edge vectors
+    var e1x=cur[0]-prev[0], e1y=cur[1]-prev[1];
+    var e2x=next[0]-cur[0], e2y=next[1]-cur[1];
+    var l1=Math.sqrt(e1x*e1x+e1y*e1y)||1;
+    var l2=Math.sqrt(e2x*e2x+e2y*e2y)||1;
+    // inward normals
+    var s = cw ? 1 : -1;
+    var n1x=s*e1y/l1, n1y=-s*e1x/l1;
+    var n2x=s*e2y/l2, n2y=-s*e2x/l2;
+    // bisector
+    var bx=n1x+n2x, by=n1y+n2y;
+    var bl=Math.sqrt(bx*bx+by*by)||1;
+    bx/=bl; by/=bl;
+    // scale factor to achieve distance d from both edges
+    var dot=n1x*n2x+n1y*n2y;
+    var factor = dot > -0.9999 ? d/Math.sqrt((1+dot)/2) : d;
+    result.push([cur[0]+factor*bx, cur[1]+factor*by]);
+  }
+  return result;
+}
+
+// ── LAYOUT ──────────────────────────────────────────────────────
+function longestEdgeAzimuth(poly) {
+  var maxLen = 0, bestAz = 180;
+  var n = poly.length;
+  for (var i=0; i<n; i++) {
+    var a=poly[i], b=poly[(i+1)%n];
+    var dx=b[0]-a[0], dy=b[1]-a[1];
+    var len=Math.sqrt(dx*dx+dy*dy);
+    if (len > maxLen) {
+      maxLen = len;
+      // azimuth of this edge (degrees from north, clockwise)
+      var ang = Math.atan2(dx, dy) * 180 / Math.PI;
+      if (ang < 0) ang += 180; // normalize to 0-180
+      bestAz = ang;
+    }
+  }
+  return bestAz;
+}
+
+function computeLayout(poly) {
+  var az  = (alignMode==='polygon') ? longestEdgeAzimuth(poly) : fv('azimuth');
+  var rsp = fv('row_spacing');
+  var sb  = fv('setback');
+  var pWp = fv('panel_wp');
+
+  var blocks = getActiveBlocks();
+  if (!blocks.length) throw new Error('אין בלוקים זמינים. בחר סוג טכנולוגיה ופאנלים.');
+
+  var sh = shrink(poly, sb);
+  var c  = centroid(sh);
+  var cx = c[0], cy = c[1];
+  var rr = -(az - 180) * Math.PI / 180;
+  var rs = sh.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
+  var b  = bbox(rs);
+
+  // Exclusion zones
+  var erPolyW = erWorldPoly();
+  var bessExcl = bessExclusionPolys();
+  var allExclRot = (erPolyW?[erPolyW]:[]).concat(bessExcl).map(function(ep){
+    return ep.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
+  });
+
+  function overlaps(corners) {
+    for (var e=0;e<allExclRot.length;e++) {
+      var ep=allExclRot[e];
+      for (var i=0;i<corners.length;i++) if (pip(corners[i][0],corners[i][1],ep)) return true;
+      for (var i=0;i<ep.length;i++) if (pip(ep[i][0],ep[i][1],corners)) return true;
+    }
+    return false;
+  }
+
+  function allIn(corners) {
+    for (var i=0;i<corners.length;i++) if (!pip(corners[i][0],corners[i][1],rs)) return false;
+    return true;
+  }
+
+  var isSAT = (tech !== 'fixed');
+  var tables = [];
+  var GAP = 0.3; // מרווח בין שולחנות
+
+  if (isSAT) {
+    // SAT 1P: עמודות צרות לאורך X, כל עמודה ממולאת לאורך Y
+    // SAT 2P: שורות לאורך Y (כמו FIX), כל שורה ממולאת לאורך X
+    var is2P = blocks[0].tracker_type === '2P';
+
+    if (!is2P) {
+      // SAT 1P: x = ציר השורות, y = ממלאים
+      var rowW = blocks[0].w;
+      var x = b.mnx;
+      while (x + rowW <= b.mxx + 0.001) {
+        var y = b.mny;
+        while (y < b.mxy) {
+          var placed = false;
+          for (var bi=0; bi<blocks.length; bi++) {
+            var blk=blocks[bi];
+            var bw=blk.w, bh=blk.h;
+            if (y+bh > b.mxy+0.001) continue;
+            var co=[[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]];
+            if (!allIn(co)) continue;
+            if (overlaps(co)) { y+=bh+GAP; placed=true; break; }
+            tables.push({outline:co.map(function(p){return rot(p[0],p[1],cx,cy,-rr);}),
+                         block:blk, rotX:x, rotY:y});
+            y+=bh+GAP; placed=true; break;
+          }
+          if (!placed) y+=0.5;
+        }
+        x+=rsp;
+      }
+    } else {
+      // SAT 2P: y = ציר השורות, x = ממלאים
+      var rowH = blocks[0].h;
+      var y = b.mny;
+      while (y + rowH <= b.mxy + 0.001) {
+        var x = b.mnx;
+        while (x < b.mxx) {
+          var placed = false;
+          for (var bi=0; bi<blocks.length; bi++) {
+            var blk=blocks[bi];
+            var bw=blk.w, bh=blk.h;
+            if (x+bw > b.mxx+0.001) continue;
+            if (Math.abs(bh-rowH)>0.5) continue;
+            var co=[[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]];
+            if (!allIn(co)) continue;
+            if (overlaps(co)) { x+=bw+GAP; placed=true; break; }
+            tables.push({outline:co.map(function(p){return rot(p[0],p[1],cx,cy,-rr);}),
+                         block:blk, rotX:x, rotY:y});
+            x+=bw+GAP; placed=true; break;
+          }
+          if (!placed) x+=0.5;
+        }
+        y+=rsp;
+      }
+    }
+  } else {
+    // FIX: שורות לאורך Y, ממלאים לאורך X
+    var rowH = blocks[0].h;
+    var y = b.mny;
+    while (y + rowH <= b.mxy + 0.001) {
+      var x = b.mnx;
+      while (x < b.mxx) {
+        var placed = false;
+        for (var bi=0; bi<blocks.length; bi++) {
+          var blk=blocks[bi];
+          var bw=blk.w, bh=blk.h;
+          if (x+bw > b.mxx+0.001) continue;
+          if (Math.abs(bh-rowH)>0.5) continue;
+          var co=[[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]];
+          if (!allIn(co)) continue;
+          if (overlaps(co)) { x+=bw+GAP; placed=true; break; }
+          tables.push({outline:co.map(function(p){return rot(p[0],p[1],cx,cy,-rr);}),
+                       block:blk, rotX:x, rotY:y});
+          x+=bw+GAP; placed=true; break;
+        }
+        if (!placed) x+=0.5;
+      }
+      y+=rsp;
+    }
+  }
+
+  if (!tables.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Row Spacing או Setback.');
+  var tp = tables.reduce(function(s,t){return s+t.block.total_panels;},0);
+  return {tables:tables, shrunk:sh, totalPanels:tp, kw:tp*pWp/1000, cx:cx, cy:cy, rr:rr};
+}
+
+
+// ── DXF WRITER ──────────────────────────────────────────────────
+function writeDxf(res, orig) {
+  var L = [];
+  function g(c,v){ L.push(String(c).padStart(3)); L.push(String(v)); }
+
+  g(0,'SECTION'); g(2,'HEADER');
+  g(9,'$ACADVER'); g(1,'AC1015');
+  g(9,'$EXTMIN'); g(10,0); g(20,0); g(30,0);
+  g(9,'$EXTMAX'); g(10,100000); g(20,100000); g(30,0);
+  g(9,'$LUNITS'); g(70,2);
+  g(9,'$MEASUREMENT'); g(70,1);
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'CLASSES'); g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'TABLES');
+  g(0,'TABLE'); g(2,'LTYPE'); g(5,'5'); g(100,'AcDbSymbolTable'); g(70,1);
+  g(0,'LTYPE'); g(5,'14'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbLinetypeTableRecord');
+  g(2,'CONTINUOUS'); g(70,0); g(3,'Solid line'); g(72,65); g(73,0); g(40,0);
+  g(0,'ENDTAB');
+
+  g(0,'TABLE'); g(2,'LAYER'); g(5,'2'); g(100,'AcDbSymbolTable'); g(70,4);
+  var layers = [['SITE_BOUNDARY',1],['TABLE_OUTLINE',3],['PANEL_OUTLINE',5],['SETBACK',8],['ELECTRICAL_ROOM',1],['BESS_CONTAINER',4],['BESS_SKID',2],['BESS_CLEARANCE',9],['BESS_ROAD',7]];
+  for (var li=0; li<layers.length; li++) {
+    g(0,'LAYER'); g(5,(100+li).toString(16));
+    g(100,'AcDbSymbolTableRecord'); g(100,'AcDbLayerTableRecord');
+    g(2,layers[li][0]); g(70,0); g(62,layers[li][1]); g(6,'CONTINUOUS');
+  }
+  g(0,'ENDTAB');
+
+  g(0,'TABLE'); g(2,'APPID'); g(5,'9'); g(100,'AcDbSymbolTable'); g(70,1);
+  g(0,'APPID'); g(5,'12'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbRegAppTableRecord'); g(2,'ACAD'); g(70,0);
+  g(0,'ENDTAB');
+
+  g(0,'TABLE'); g(2,'BLOCK_RECORD'); g(5,'1'); g(100,'AcDbSymbolTable'); g(70,2);
+  g(0,'BLOCK_RECORD'); g(5,'1F'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbBlockTableRecord'); g(2,'*MODEL_SPACE');
+  g(0,'BLOCK_RECORD'); g(5,'1B'); g(100,'AcDbSymbolTableRecord'); g(100,'AcDbBlockTableRecord'); g(2,'*PAPER_SPACE');
+  g(0,'ENDTAB');
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'BLOCKS');
+  g(0,'BLOCK'); g(5,'20'); g(100,'AcDbEntity'); g(8,'0');
+  g(100,'AcDbBlockBegin'); g(2,'*MODEL_SPACE'); g(70,0); g(10,0); g(20,0); g(30,0); g(3,'*MODEL_SPACE'); g(1,'');
+  g(0,'ENDBLK'); g(5,'21'); g(100,'AcDbEntity'); g(8,'0'); g(100,'AcDbBlockEnd');
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'ENTITIES');
+  var h = 300;
+  function lw(pts, layer) {
+    g(0,'LWPOLYLINE'); g(5,(h++).toString(16));
+    g(100,'AcDbEntity'); g(8,layer);
+    g(100,'AcDbPolyline'); g(90,pts.length); g(70,1); g(43,0);
+    for (var i=0;i<pts.length;i++){ g(10,pts[i][0].toFixed(4)); g(20,pts[i][1].toFixed(4)); }
+  }
+  lw(orig, 'SITE_BOUNDARY');
+  lw(res.shrunk, 'SETBACK');
+  for (var ti=0; ti<res.tables.length; ti++) {
+    lw(res.tables[ti].outline, 'TABLE_OUTLINE');
+  }
+  var erP = erWorldPoly();
+  if (erP) {
+    // Write all polylines from block
+    var erPolys = erWorldPolys();
+    erPolys.forEach(function(pts) {
+      if (pts.length >= 2) lw(pts, 'ELECTRICAL_ROOM');
+    });
+    // Write all lines from block
+    var erLines = erWorldLines();
+    erLines.forEach(function(l) {
+      g(0,'LINE'); g(5,(h++).toString(16));
+      g(100,'AcDbEntity'); g(8,'ELECTRICAL_ROOM');
+      g(100,'AcDbLine');
+      g(10,l.x1.toFixed(4)); g(20,l.y1.toFixed(4)); g(30,0);
+      g(11,l.x2.toFixed(4)); g(21,l.y2.toFixed(4)); g(31,0);
+    });
+  }
+  // Write BESS units
+  bessUnits.forEach(function(u) {
+    var bu = bessUnitGeometry(u.cx, u.cy, u.angle);
+    lw(bu.cont1, 'BESS_CONTAINER');
+    lw(bu.cont2, 'BESS_CONTAINER');
+    lw(bu.skid,  'BESS_SKID');
+    lw(bu.clrBox,'BESS_CLEARANCE');
+    bu.roads.forEach(function(r){ lw(r,'BESS_ROAD'); });
+  });
+  g(0,'ENDSEC');
+
+  g(0,'SECTION'); g(2,'OBJECTS');
+  g(0,'DICTIONARY'); g(5,'C'); g(100,'AcDbDictionary'); g(281,1); g(3,'ACAD_GROUP'); g(350,'D');
+  g(0,'DICTIONARY'); g(5,'D'); g(100,'AcDbDictionary'); g(281,1);
+  g(0,'ENDSEC');
+  g(0,'EOF');
+
+  return L.join('\r\n');
+}
+
+// ── PREVIEW ─────────────────────────────────────────────────────
+var previewScale = null;
+var zoomLevel = 1.0;
+
+function changeZoom(delta) {
+  zoomLevel = Math.max(0.25, Math.min(20, zoomLevel + delta));
+  document.getElementById('zoom-lbl').textContent = Math.round(zoomLevel*100) + '%';
+  if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+}
+
+function resetZoom() {
+  zoomLevel = 1.0;
+  panX = 0; panY = 0;
+  document.getElementById('zoom-lbl').textContent = '100%';
+  if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+}
+
+function drawPreview(res, orig) {
+  var wrap = document.getElementById('canvas-wrap');
+  var cv = document.getElementById('preview-canvas');
+  var W = wrap.offsetWidth || 280;
+  var H = Math.round(W * 0.75);
+  cv.width = W; cv.height = H;
+  cv.style.width = W + 'px';
+  cv.style.height = H + 'px';
+  var ctx = cv.getContext('2d');
+  ctx.fillStyle = '#1a2020'; ctx.fillRect(0,0,W,H);
+
+  var all = orig.concat(res.shrunk);
+  for (var i=0;i<res.tables.length;i++) {
+    for (var j=0;j<res.tables[i].outline.length;j++) all.push(res.tables[i].outline[j]);
+  }
+  var xs = all.map(function(p){return p[0];}), ys = all.map(function(p){return p[1];});
+  var mnx=Math.min.apply(null,xs), mxx=Math.max.apply(null,xs);
+  var mny=Math.min.apply(null,ys), mxy=Math.max.apply(null,ys);
+  var pad=24;
+  var baseSc = Math.min((W-pad*2)/(mxx-mnx||1),(H-pad*2)/(mxy-mny||1));
+  var sc = baseSc * zoomLevel;
+  var ox = pad + (W-pad*2-(mxx-mnx)*sc)/2 + panX;
+  var oy = pad + (H-pad*2-(mxy-mny)*sc)/2 + panY;
+
+  previewScale = { mnx:mnx, mny:mny, sc:sc, ox:ox, oy:oy, H:H };
+
+  function tp(p){ return [ox+(p[0]-mnx)*sc, H-(oy+(p[1]-mny)*sc)]; }
+
+  function dp(pts, stroke, fill, lw) {
+    if (!pts || !pts.length) return;
+    ctx.beginPath();
+    var s = tp(pts[0]); ctx.moveTo(s[0],s[1]);
+    for (var i=1;i<pts.length;i++){ var p=tp(pts[i]); ctx.lineTo(p[0],p[1]); }
+    ctx.closePath();
+    if (fill){ ctx.fillStyle=fill; ctx.fill(); }
+    ctx.strokeStyle=stroke; ctx.lineWidth=lw||1; ctx.stroke();
+  }
+
+  dp(orig,'#f55',null,1.5);
+  dp(res.shrunk,'#555',null,1);
+  var rr_draw = res.rr || 0;
+  var ccx = res.cx || centroid(orig)[0];
+  var ccy = res.cy || centroid(orig)[1];
+  for (var i=0;i<res.tables.length;i++){
+    var tbl=res.tables[i], blk=tbl.block;
+    var bx=tbl.rotX||0, by=tbl.rotY||0;
+    // צייר פאנלים פנימיים - קודם fill, אחר כך outlines
+    if (blk && blk.polys) {
+      // שלב 1: fill לכל הפולגונים הקטנים (פאנלים)
+      blk.polys.forEach(function(poly) {
+        var pts = poly.pts;
+        var xs = pts.map(function(p){return p[0];}),
+            ys = pts.map(function(p){return p[1];});
+        var pw = Math.max.apply(null,xs)-Math.min.apply(null,xs);
+        var ph = Math.max.apply(null,ys)-Math.min.apply(null,ys);
+        // פאנל = פולגון קטן (לא הקונטור החיצוני)
+        var isSmall = pw < blk.w*0.99 && ph < blk.h*0.99;
+        if (!isSmall) return;
+        var wpts = pts.map(function(pt){
+          return rot(bx+pt[0], by+pt[1], ccx, ccy, -rr_draw);
+        });
+        dp(wpts,'#4af','rgba(68,170,255,0.3)',0.5);
+      });
+      // שלב 2: קונטור חיצוני בלבד
+      var outerPoly = null, outerArea = 0;
+      blk.polys.forEach(function(poly) {
+        var pts = poly.pts;
+        var xs = pts.map(function(p){return p[0];}),
+            ys = pts.map(function(p){return p[1];});
+        var area = (Math.max.apply(null,xs)-Math.min.apply(null,xs)) *
+                   (Math.max.apply(null,ys)-Math.min.apply(null,ys));
+        if (area > outerArea) { outerArea = area; outerPoly = poly; }
+      });
+    }
+    dp(tbl.outline,'#4c8',null,1.5);
+  }
+
+  // Draw electrical room - full block geometry
+  if (electricalRoom) {
+    var erPolys = erWorldPolys();
+    var erLines = erWorldLines();
+    // Draw all polylines
+    erPolys.forEach(function(pts) {
+      if (!pts || pts.length < 2) return;
+      ctx.beginPath();
+      var s = tp(pts[0]); ctx.moveTo(s[0],s[1]);
+      for (var i=1;i<pts.length;i++){ var p=tp(pts[i]); ctx.lineTo(p[0],p[1]); }
+      ctx.strokeStyle = '#ff6432'; ctx.lineWidth = 1; ctx.stroke();
+    });
+    // Draw all lines
+    erLines.forEach(function(l) {
+      var p1=tp([l.x1,l.y1]), p2=tp([l.x2,l.y2]);
+      ctx.beginPath(); ctx.moveTo(p1[0],p1[1]); ctx.lineTo(p2[0],p2[1]);
+      ctx.strokeStyle = '#ff6432'; ctx.lineWidth = 0.5; ctx.stroke();
+    });
+    // Fill bounding box lightly
+    var erP = erWorldPoly();
+    if (erP) {
+      ctx.beginPath();
+      var s=tp(erP[0]); ctx.moveTo(s[0],s[1]);
+      for (var i=1;i<erP.length;i++){ var p=tp(erP[i]); ctx.lineTo(p[0],p[1]); }
+      ctx.closePath();
+      ctx.fillStyle='rgba(255,100,50,0.08)'; ctx.fill();
+    }
+    // Label
+    var erC = tp([electricalRoom.worldX, electricalRoom.worldY]);
+    ctx.fillStyle='#ff6432'; ctx.font='bold 10px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('חדר חשמל', erC[0], erC[1]);
+  }
+
+  // Draw BESS units
+  bessUnits.forEach(function(u) {
+    var g = bessUnitGeometry(u.cx, u.cy, u.angle);
+    // Roads
+    g.roads.forEach(function(pts) {
+      ctx.beginPath();
+      var s=tp(pts[0]); ctx.moveTo(s[0],s[1]);
+      for(var i=1;i<pts.length;i++){var p=tp(pts[i]);ctx.lineTo(p[0],p[1]);}
+      ctx.closePath();
+      ctx.fillStyle='rgba(180,160,100,0.25)'; ctx.fill();
+      ctx.strokeStyle='#b0a060'; ctx.lineWidth=0.5; ctx.stroke();
+    });
+    // Clearance box
+    var cb=g.clrBox;
+    ctx.beginPath();
+    var s=tp(cb[0]); ctx.moveTo(s[0],s[1]);
+    for(var i=1;i<cb.length;i++){var p=tp(cb[i]);ctx.lineTo(p[0],p[1]);}
+    ctx.closePath();
+    ctx.fillStyle='rgba(100,80,200,0.08)'; ctx.fill();
+    ctx.strokeStyle='#7060c0'; ctx.lineWidth=0.8; ctx.setLineDash([3,3]); ctx.stroke();
+    ctx.setLineDash([]);
+    // Containers
+    [g.cont1, g.cont2].forEach(function(pts) {
+      ctx.beginPath();
+      var s=tp(pts[0]); ctx.moveTo(s[0],s[1]);
+      for(var i=1;i<pts.length;i++){var p=tp(pts[i]);ctx.lineTo(p[0],p[1]);}
+      ctx.closePath();
+      ctx.fillStyle='rgba(80,60,180,0.35)'; ctx.fill();
+      ctx.strokeStyle='#5b3fa0'; ctx.lineWidth=1.5; ctx.stroke();
+    });
+    // SKID
+    var sk=g.skid;
+    ctx.beginPath();
+    var ss=tp(sk[0]); ctx.moveTo(ss[0],ss[1]);
+    for(var i=1;i<sk.length;i++){var p=tp(sk[i]);ctx.lineTo(p[0],p[1]);}
+    ctx.closePath();
+    ctx.fillStyle='rgba(255,180,0,0.5)'; ctx.fill();
+    ctx.strokeStyle='#c08000'; ctx.lineWidth=1.5; ctx.stroke();
+    // Label
+    var lc=tp([u.cx,u.cy]);
+    ctx.fillStyle='#5b3fa0'; ctx.font='bold 9px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('BESS', lc[0], lc[1]);
+  });
+
+  document.getElementById('er-card').style.display = 'block';
+  document.getElementById('bess-card').style.display = 'block';
+}
+
+// ── ELECTRICAL ROOM ─────────────────────────────────────────────
+function toggleErMode() {
+  erMode = !erMode;
+  var btn = document.getElementById('er-btn');
+  btn.classList.toggle('active', erMode);
+  btn.textContent = erMode ? '🖱 לחץ על גבול הפולגון...' : '📍 מקם חדר חשמל';
+}
+
+function clearEr() {
+  electricalRoom = null;
+  erMode = false;
+  document.getElementById('er-btn').classList.remove('active');
+  document.getElementById('er-btn').textContent = '📍 מקם חדר חשמל';
+  document.getElementById('er-placed').classList.remove('show');
+  if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+}
+
+function closestEdgePt(poly, mx, my) {
+  var best = null, bestDist = Infinity, bestSeg = 0;
+  for (var i = 0; i < poly.length; i++) {
+    var a = poly[i], b = poly[(i+1) % poly.length];
+    var dx = b[0]-a[0], dy = b[1]-a[1];
+    var len2 = dx*dx + dy*dy;
+    var t = len2 > 0 ? Math.max(0, Math.min(1, ((mx-a[0])*dx + (my-a[1])*dy) / len2)) : 0;
+    var px = a[0]+t*dx, py = a[1]+t*dy;
+    var d = Math.hypot(mx-px, my-py);
+    if (d < bestDist) { bestDist = d; best = [px, py]; bestSeg = i; }
+  }
+  return { pt: best, seg: bestSeg, dist: bestDist };
+}
+
+function placeErFromCanvas(canvasX, canvasY, poly, scaleInfo) {
+  // Convert canvas coords to world coords
+  var wx = scaleInfo.mnx + (canvasX - scaleInfo.ox) / scaleInfo.sc;
+  var wy = scaleInfo.mny + (scaleInfo.H - canvasY - scaleInfo.oy) / scaleInfo.sc;
+
+  var ew = parseFloat(document.getElementById('er-w').value) || 12;
+  var eh = parseFloat(document.getElementById('er-h').value) || 8;
+
+  var res = closestEdgePt(poly, wx, wy);
+  var pt = res.pt, seg = res.seg;
+
+  var a = poly[seg], b = poly[(seg+1) % poly.length];
+  var dx = b[0]-a[0], dy = b[1]-a[1];
+  var len = Math.hypot(dx, dy) || 1;
+  var nx = dy/len, ny = -dx/len;
+
+  // inward normal (toward centroid)
+  var c = centroid(poly);
+  var dot = (c[0]-pt[0])*nx + (c[1]-pt[1])*ny;
+  var inNx = dot > 0 ? nx : -nx;
+  var inNy = dot > 0 ? ny : -ny;
+
+  var angle = Math.atan2(dy, dx);
+
+  electricalRoom = {
+    worldX: pt[0] + inNx * eh/2,
+    worldY: pt[1] + inNy * eh/2,
+    w: ew, h: eh,
+    angle: angle,
+    inNx: inNx, inNy: inNy,
+    edgePt: pt
+  };
+
+  erMode = false;
+  document.getElementById('er-btn').classList.remove('active');
+  document.getElementById('er-btn').textContent = '📍 העבר חדר חשמל';
+  document.getElementById('er-placed').classList.add('show');
+
+  // Auto-recalc layout immediately
+  if (lastPoly) {
+    try {
+      var res = computeLayout(lastPoly);
+      lastRes = res;
+      var dxf = writeDxf(res, lastPoly);
+      resultBlob = new Blob([dxf], {type:'application/dxf'});
+      document.getElementById('r-tables').textContent = res.tables.length;
+      document.getElementById('r-panels').textContent = res.totalPanels;
+      document.getElementById('r-kw').textContent = res.kw.toFixed(1);
+      var rb = document.getElementById('result-box');
+      rb.classList.add('show');
+      rb.style.transition = 'background .15s';
+      rb.style.background = '#b5d9c5';
+      setTimeout(function(){ rb.style.background = ''; }, 400);
+      document.getElementById('er-placed').textContent = '✓ חדר חשמל מוקם — פריסה עודכנה אוטומטית';
+      drawPreview(res, lastPoly);
+      document.getElementById('preview-wrap').classList.add('show');
+    } catch(e) { if (lastRes) drawPreview(lastRes, lastPoly); }
+  } else {
+    if (lastRes) drawPreview(lastRes, lastPoly);
+  }
+}
+
+// Transform a point from block-local coords to world coords
+function erTransformPt(lx, ly) {
+  if (!electricalRoom) return [lx, ly];
+  var er = electricalRoom;
+  var cos = Math.cos(er.angle), sin = Math.sin(er.angle);
+  // Center the block on the placement point
+  var cx = lx - ER_BLOCK.w/2, cy = ly - ER_BLOCK.h/2;
+  return [
+    er.worldX + cx*cos - cy*sin,
+    er.worldY + cx*sin + cy*cos
+  ];
+}
+
+// Build rectangular polygon for electrical room in world coords (for exclusion)
+function erWorldPoly() {
+  if (!electricalRoom) return null;
+  var er = electricalRoom;
+  var W = ER_BLOCK.w, H = ER_BLOCK.h;
+  var cos = Math.cos(er.angle), sin = Math.sin(er.angle);
+  var corners = [[0,0],[W,0],[W,H],[0,H]];
+  // offset so the edge midpoint touches the boundary
+  return corners.map(function(c) {
+    var lx = c[0] - W/2, ly = c[1] - H/2;
+    return [er.worldX + lx*cos - ly*sin,
+            er.worldY + lx*sin + ly*cos];
+  });
+}
+
+// Get all block polylines in world coords
+function erWorldPolys() {
+  if (!electricalRoom || !ER_BLOCK) return [];
+  return ER_BLOCK.polys.map(function(p) {
+    return p.pts.map(function(pt) {
+      return erTransformPt(pt[0], pt[1]);
+    });
+  });
+}
+
+// Get all block lines in world coords
+function erWorldLines() {
+  if (!electricalRoom || !ER_BLOCK) return [];
+  return ER_BLOCK.lines.map(function(l) {
+    var p1 = erTransformPt(l.x1, l.y1);
+    var p2 = erTransformPt(l.x2, l.y2);
+    return {x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],layer:l.layer};
+  });
+}
+
+// ── MAIN ────────────────────────────────────────────────────────
+function runLayout() {
+  if (!selectedFile) return;
+  hideAll();
+  document.getElementById('spinner').classList.add('show');
+  document.getElementById('gen-btn').disabled = true;
+
+  setTimeout(function(){
+    try {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var text = e.target.result;
+          var poly = parseDxf(text);
+          lastPoly = poly;
+          var res  = computeLayout(poly);
+          lastRes = res;
+          var dxf  = writeDxf(res, poly);
+          resultBlob = new Blob([dxf], {type:'application/dxf'});
+
+          document.getElementById('r-tables').textContent = res.tables.length;
+          document.getElementById('r-panels').textContent = res.totalPanels;
+          document.getElementById('r-kw').textContent     = res.kw.toFixed(1);
+          document.getElementById('result-box').classList.add('show');
+          drawPreview(res, poly);
+          document.getElementById('preview-wrap').classList.add('show');
+        } catch(err) {
+          showErr(err.message || String(err));
+        } finally {
+          document.getElementById('spinner').classList.remove('show');
+          document.getElementById('gen-btn').disabled = false;
+        }
+      };
+      reader.onerror = function(){ showErr('שגיאה בקריאת הקובץ'); };
+      reader.readAsText(selectedFile, 'UTF-8');
+    } catch(err) {
+      showErr(err.message || String(err));
+      document.getElementById('spinner').classList.remove('show');
+      document.getElementById('gen-btn').disabled = false;
+    }
+  }, 50);
+}
+
+document.getElementById('dl-btn').addEventListener('click', function(){
+  if (!resultBlob) return;
+  var url = URL.createObjectURL(resultBlob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'pv_layout.dxf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+function toggleBessEnabled(cb) {
+  document.getElementById('bess-body').style.display = cb.checked ? 'block' : 'none';
+  if (!cb.checked) { clearBess(); }
+}
+
+// ── PAN support ──────────────────────────────────────────────────
+var panX = 0, panY = 0;
+var isPanning = false, panStartX = 0, panStartY = 0;
+
+(function() {
+  var cv = document.getElementById('preview-canvas');
+
+  cv.addEventListener('mousedown', function(e) {
+    if (erMode) return;
+    isPanning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    cv.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (!isPanning) return;
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    if (lastRes && lastPoly) drawPreview(lastRes, lastPoly);
+  });
+
+  window.addEventListener('mouseup', function() {
+    if (isPanning) {
+      isPanning = false;
+      document.getElementById('preview-canvas').style.cursor = erMode ? 'crosshair' : 'grab';
+    }
+  });
+
+  cv.addEventListener('mousemove', function() {
+    if (!isPanning) cv.style.cursor = erMode ? 'crosshair' : 'grab';
+  });
+})();
+document.getElementById('preview-canvas').addEventListener('click', function(e) {
+  if (!erMode || !previewScale || !lastPoly) return;
+  var rect = this.getBoundingClientRect();
+  var scaleX = this.width / rect.width;
+  var cx = (e.clientX - rect.left) * scaleX;
+  var cy = (e.clientY - rect.top);
+  placeErFromCanvas(cx, cy, lastPoly, previewScale);
+});
+
+document.getElementById('preview-canvas').addEventListener('mousemove', function(e) {
+  if (!erMode) return;
+  this.style.cursor = 'crosshair';
+});
+document.getElementById('preview-canvas').addEventListener('mouseleave', function() {
+  this.style.cursor = 'default';
+});
+</script>
+</body>
+</html>
