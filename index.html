@@ -785,126 +785,121 @@ function longestEdgeAzimuth(poly) {
 
 // ── LAYOUT (FIXED - no overlapping tables) ───────────────────────
 function computeFloatLayout(poly) {
-  // Floating solar: symmetric, centered, only whole blocks
-  // Strategy: find max grid that fits, center it, verify every block with allIn
-  var az  = 180; // always south for floating
+  var az  = 180; // always south
   var rsp = fv('row_spacing');
   var sb  = parseFloat(document.getElementById('float_setback').value) || 15;
   var pWp = fv('panel_wp');
-  var PPS = selectedPPS || 28;
 
-  // For floating, use a simple rectangular block based on panel dimensions
-  // portrait: bw = panel_w (short side), bh = panel_h (long side) — 1 panel per table unit
-  // The "block" for floating is just one table row (PPS panels side by side)
-  var pH = fv('panel_h') / 1000; // long side in meters
-  var pW = fv('panel_w') / 1000; // short side
-  // Portrait: panels in row along long axis, table width = PPS * pW, height = pH
-  var bw = PPS * pW + (PPS - 1) * 0.02; // table width (along row)
-  var bh = pH;                            // table height (1 panel tall)
-  var GAP = 0.05; // gap between tables in same row
+  // Single panel dimensions (portrait)
+  var pH = fv('panel_h') / 1000; // long side = table height
+  var pW = fv('panel_w') / 1000; // short side = table width
+  var bw = pW;   // one panel wide
+  var bh = pH;   // one panel tall
+  var GAP_COL = 0.02; // gap between panels in same row
+  var PPS = selectedPPS || 28; // panels per string
 
   var sh = shrink(poly, sb);
   var c  = centroid(sh);
   var cx = c[0], cy = c[1];
-  var rr = -(az - 180) * Math.PI / 180; // rr=0 for south (az=180)
+  var rr = 0; // south = no rotation
   var rs = sh.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
   var b  = bbox(rs);
 
   var totalW = b.mxx - b.mnx;
   var totalH = b.mxy - b.mny;
 
-  // allIn check for rotated space
   function allInRot(x, y, w, h) {
-    var corners = [[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
-    for (var i=0;i<4;i++) if (!pip(corners[i][0],corners[i][1],rs)) return false;
-    return true;
+    return pip(x,    y,    rs) && pip(x+w, y,    rs) &&
+           pip(x+w, y+h,  rs) && pip(x,   y+h,  rs);
   }
 
-  // Step 1: find max nCols and nRows where ALL blocks in a full grid fit
-  // Start with max possible and shrink until all fit
-  var maxCols = Math.floor((totalW + GAP) / (bw + GAP));
-  var maxRows = Math.floor((totalH + GAP) / (rsp));
+  // Max panels per row and max rows
+  var maxCols = Math.floor((totalW + GAP_COL) / (bw + GAP_COL));
+  var maxRows = Math.floor((totalH + GAP_COL) / (rsp));
 
-  // For each candidate (nCols, nRows), center and test all 4 corner blocks
+  // Find nCols: shrink until corner panels fit
   function testGrid(nC, nR) {
     if (nC <= 0 || nR <= 0) return false;
-    var gw = nC * (bw + GAP) - GAP;
+    var gw = nC * (bw + GAP_COL) - GAP_COL;
     var gh = nR * rsp - (rsp - bh);
     var sx = b.mnx + (totalW - gw) / 2;
     var sy = b.mny + (totalH - gh) / 2;
-    // Test all 4 corners + center blocks
-    var testCols = [0, Math.floor(nC/2), nC-1];
-    var testRows = [0, Math.floor(nR/2), nR-1];
-    for (var ri=0; ri<testRows.length; ri++) {
-      for (var ci=0; ci<testCols.length; ci++) {
-        var x = sx + testCols[ci] * (bw + GAP);
-        var y = sy + testRows[ri] * rsp;
-        if (!allInRot(x, y, bw, bh)) return false;
-      }
-    }
-    return true;
+    // test all 4 corners
+    var ex = sx + (nC-1) * (bw + GAP_COL);
+    var ey = sy + (nR-1) * rsp;
+    return allInRot(sx, sy, bw, bh) &&
+           allInRot(ex, sy, bw, bh) &&
+           allInRot(sx, ey, bw, bh) &&
+           allInRot(ex, ey, bw, bh);
   }
 
-  // Find best nCols: shrink until fits
   var nCols = maxCols;
-  while (nCols > 0 && !testGrid(nCols, 1)) nCols--;
-
+  while (nCols > 0 && !testGrid(nCols, maxRows)) nCols--;
   var nRows = maxRows;
   while (nRows > 0 && !testGrid(nCols, nRows)) nRows--;
 
-  if (nCols <= 0 || nRows <= 0) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה או Row Spacing.');
+  if (nCols <= 0 || nRows <= 0)
+    throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
 
-  // Step 2: center the grid
-  var gridW = nCols * (bw + GAP) - GAP;
+  var gridW = nCols * (bw + GAP_COL) - GAP_COL;
   var gridH = nRows * rsp - (rsp - bh);
   var startX = b.mnx + (totalW - gridW) / 2;
   var startY = b.mny + (totalH - gridH) / 2;
 
-  // Step 3: place all blocks, verify each one individually
-  var tables = [];
-  var blkProto = {name:'FLOAT', tech:'FIX', tracker_type:'FIX',
-    strings:1, panels_per_string:PPS, total_panels:PPS, w:bw, h:bh,
+  // Build panel proto
+  var panelBlk = {name:'FLOAT_PANEL', tech:'FIX', tracker_type:'FIX',
+    strings:1, panels_per_string:1, total_panels:1, w:bw, h:bh,
     polys:[{layer:'TABLE_OUTLINE', pts:[[0,0],[bw,0],[bw,bh],[0,bh],[0,0]]}]};
 
+  var tables = [];
   for (var row=0; row<nRows; row++) {
     var y = startY + row * rsp;
     for (var col=0; col<nCols; col++) {
-      var x = startX + col * (bw + GAP);
-      if (!allInRot(x, y, bw, bh)) continue; // skip any that don't fit
+      var x = startX + col * (bw + GAP_COL);
+      if (!allInRot(x, y, bw, bh)) continue;
       var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
         return rot(p[0],p[1],cx,cy,-rr);
       });
-      tables.push({outline:outline, block:blkProto, rotX:x, rotY:y, partial:false});
+      tables.push({outline:outline, block:panelBlk, rotX:x, rotY:y, partial:false});
     }
   }
 
-  // Step 4: edge columns — 2 adjacent rows, each with edgePanels panels, total >= 24
-  if (floatSym !== 'none') {
-    var usedW = gridW;
-    var remW = totalW - usedW;
-    var edgeX = startX + gridW + GAP;
-    if (remW >= pW + 0.1) {
-      var edgePanels = Math.floor((remW - GAP + 0.001) / (pW + 0.02));
+  // Edge columns: 2 adjacent rows × edgePanels >= 24
+  if (floatSym !== 'none' && nCols > 0) {
+    var usedW = gridW + GAP_COL;
+    var remR = (totalW - gridW) / 2; // symmetric — same on both sides
+    if (remR >= bw) {
+      var edgePanels = Math.floor((remR + GAP_COL) / (bw + GAP_COL));
       if (edgePanels >= 1 && 2 * edgePanels >= 24) {
-        var ew = edgePanels * pW + (edgePanels - 1) * 0.02;
-        var edgeBlk = Object.assign({}, blkProto, {total_panels: edgePanels, panels_per_string: edgePanels, w: ew, name:'FLOAT_EDGE'});
-        for (var row=0; row<nRows-1; row+=2) {
-          var y0 = startY + row * rsp;
-          var y1 = startY + (row+1) * rsp;
-          if (allInRot(edgeX, y0, ew, bh) && allInRot(edgeX, y1, ew, bh)) {
-            var out0 = [[edgeX,y0],[edgeX+ew,y0],[edgeX+ew,y0+bh],[edgeX,y0+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
-            var out1 = [[edgeX,y1],[edgeX+ew,y1],[edgeX+ew,y1+bh],[edgeX,y1+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
-            tables.push({outline:out0, block:edgeBlk, rotX:edgeX, rotY:y0, partial:true});
-            tables.push({outline:out1, block:edgeBlk, rotX:edgeX, rotY:y1, partial:true});
+        var ew = edgePanels * (bw + GAP_COL) - GAP_COL;
+        // right edge
+        var edgeXR = startX + gridW + GAP_COL;
+        // left edge (symmetric)
+        var edgeXL = startX - GAP_COL - ew;
+        var edgeBlk = Object.assign({}, panelBlk, {
+          total_panels: edgePanels, panels_per_string: edgePanels, w: ew, name:'FLOAT_EDGE'
+        });
+        [[edgeXL, true], [edgeXR, true]].forEach(function(side) {
+          var ex = side[0];
+          for (var row=0; row<nRows-1; row+=2) {
+            var y0 = startY + row * rsp;
+            var y1 = startY + (row+1) * rsp;
+            if (allInRot(ex, y0, ew, bh) && allInRot(ex, y1, ew, bh)) {
+              var o0 = [[ex,y0],[ex+ew,y0],[ex+ew,y0+bh],[ex,y0+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
+              var o1 = [[ex,y1],[ex+ew,y1],[ex+ew,y1+bh],[ex,y1+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
+              tables.push({outline:o0, block:edgeBlk, rotX:ex, rotY:y0, partial:true});
+              tables.push({outline:o1, block:edgeBlk, rotX:ex, rotY:y1, partial:true});
+            }
           }
-        }
+        });
       }
     }
   }
 
   if (!tables.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
-  var tp = tables.reduce(function(s,t){return s+t.block.total_panels;},0);
-  return {tables:tables, shrunk:sh, totalPanels:tp, kw:tp*pWp/1000, cx:cx, cy:cy, rr:rr, floating:true};
+  var tp = tables.length; // 1 panel per table entry
+  var kw = tp * pWp / 1000;
+  return {tables:tables, shrunk:sh, totalPanels:tp, kw:kw, cx:cx, cy:cy, rr:rr, floating:true};
 }
 
 
