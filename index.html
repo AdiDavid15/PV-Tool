@@ -822,16 +822,22 @@ function computeFloatLayout(poly) {
 
   if (!rowData.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
 
-  // Step 2: find min panels per row → symmetric grid width
-  var minCols = rowData.reduce(function(m,r){ return Math.min(m, r.xs.length); }, 9999);
+  // Step 2: filter out thin edge rows (< 50% of median) for symmetric core
+  var counts = rowData.map(function(r){ return r.xs.length; }).slice().sort(function(a,b){return a-b;});
+  var median = counts[Math.floor(counts.length/2)];
+  var threshold = median * 0.5;
+  var coreRows = rowData.filter(function(r){ return r.xs.length >= threshold; });
 
-  // Step 3: for each row, pick minCols panels centered around row's center
+  // Step 3: min panels in core rows → symmetric grid width
+  var minCols = coreRows.reduce(function(m,r){ return Math.min(m, r.xs.length); }, 9999);
+
+  // Step 4: for each core row, pick minCols panels centered around row's center
   var panelBlk = {name:'FLOAT_PANEL', tech:'FIX', tracker_type:'FIX',
     strings:1, panels_per_string:1, total_panels:1, w:bw, h:bh,
     polys:[{layer:'TABLE_OUTLINE', pts:[[0,0],[bw,0],[bw,bh],[0,bh],[0,0]]}]};
 
   var tables = [];
-  rowData.forEach(function(r) {
+  coreRows.forEach(function(r) {
     var n = r.xs.length;
     var startI = Math.floor((n - minCols) / 2);
     for (var ci = 0; ci < minCols; ci++) {
