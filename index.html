@@ -830,61 +830,68 @@ function computeFloatLayout(poly) {
   // Step 3: min panels in core rows → symmetric grid width
   var minCols = coreRows.reduce(function(m,r){ return Math.min(m, r.xs.length); }, 9999);
 
-  // Step 4: for each core row, pick minCols panels centered around row's center
+  // Step 4: find global center X of the core (average center of all rows)
+  var sumCenterX = 0;
+  coreRows.forEach(function(r) {
+    sumCenterX += (r.xs[0] + r.xs[r.xs.length-1] + bw) / 2;
+  });
+  var globalCenterX = sumCenterX / coreRows.length;
+
+  // Grid half-width
+  var halfGridW = (minCols * (bw + GAP) - GAP) / 2;
+  var gridStartX = globalCenterX - halfGridW;
+
   var panelBlk = {name:'FLOAT_PANEL', tech:'FIX', tracker_type:'FIX',
     strings:1, panels_per_string:1, total_panels:1, w:bw, h:bh,
     polys:[{layer:'TABLE_OUTLINE', pts:[[0,0],[bw,0],[bw,bh],[0,bh],[0,0]]}]};
 
   var tables = [];
   coreRows.forEach(function(r) {
-    var n = r.xs.length;
-    var startI = Math.floor((n - minCols) / 2);
     for (var ci = 0; ci < minCols; ci++) {
-      var x = r.xs[startI + ci];
+      var x = gridStartX + ci * (bw + GAP);
+      // Verify panel is inside polygon
+      if (!allInPoly(x, r.y, bw, bh)) continue;
       var outline = [[x,r.y],[x+bw,r.y],[x+bw,r.y+bh],[x,r.y+bh]];
       tables.push({outline:outline, block:panelBlk, rotX:x, rotY:r.y, partial:false});
     }
   });
 
   // Step 4: edge columns — symmetric on both sides, 2 adjacent rows × panels >= 24
-  // Edge columns: 2 adjacent rows × edgePanels >= 24, symmetric on both sides
-  if (floatSym !== 'none' && coreRows.length >= 2) {
-    // Find actual core grid X boundaries from placed tables
-    var coreLeft  = Infinity, coreRight = -Infinity;
-    tables.forEach(function(t){ coreLeft=Math.min(coreLeft,t.rotX); coreRight=Math.max(coreRight,t.rotX+bw); });
+  if (floatSym !== 'none' && rowData.length >= 2) {
+    // Find leftmost and rightmost X of the core grid
+    var coreXmin = rowData[0].xs[Math.floor((rowData[0].xs.length - minCols) / 2)];
+    var coreXmax = coreXmin + minCols * (bw + GAP) - GAP;
 
-    // For each core row, how many extra panels fit to the right?
-    // Use the row with FEWEST extra panels on the right (most restrictive)
-    var minRightExtra = Infinity;
-    coreRows.forEach(function(r) {
-      var extraCount = 0;
-      var rx = coreRight + GAP;
-      while (rx + bw <= bb.mxx + 0.01) {
-        if (allInPoly(rx, r.y, bw, bh)) extraCount++;
-        else break;
-        rx += bw + GAP;
-      }
-      minRightExtra = Math.min(minRightExtra, extraCount);
+    rowData.forEach(function(r) {
+      var n = r.xs.length;
+      var si = Math.floor((n - minCols) / 2);
+      coreXmin = Math.max(coreXmin, r.xs[si]);
+      coreXmax = Math.min(coreXmax, r.xs[si] + minCols * (bw + GAP) - GAP);
     });
 
-    if (minRightExtra >= 1 && 2 * minRightExtra >= 24) {
-      var ew = minRightExtra * (bw + GAP) - GAP;
-      var edgeRX = coreRight + GAP;           // right edge start X
-      var edgeLX = coreLeft - GAP - ew;       // left edge start X (symmetric)
+    // Right edge: panels available to the right of core
+    var rightXs = [];
+    var rx = coreXmax + GAP;
+    while (rx + bw <= bb.mxx + 0.01) { rightXs.push(rx); rx += bw + GAP; }
+
+    if (rightXs.length >= 1 && 2 * rightXs.length >= 24) {
+      var ew = rightXs.length * (bw + GAP) - GAP;
+      var lx = coreXmin - GAP - ew; // symmetric left edge
       var edgeBlk = Object.assign({}, panelBlk, {
-        total_panels: minRightExtra, panels_per_string: minRightExtra, w: ew, name: 'FLOAT_EDGE'
+        total_panels: rightXs.length, panels_per_string: rightXs.length, w:ew, name:'FLOAT_EDGE'
       });
-      for (var ri = 0; ri < coreRows.length - 1; ri += 2) {
-        var y0 = coreRows[ri].y, y1 = coreRows[ri+1].y;
-        // right side — verify both rows fit
-        if (allInPoly(edgeRX, y0, ew, bh) && allInPoly(edgeRX, y1, ew, bh)) {
-          tables.push({outline:[[edgeRX,y0],[edgeRX+ew,y0],[edgeRX+ew,y0+bh],[edgeRX,y0+bh]], block:edgeBlk, partial:true});
-          tables.push({outline:[[edgeRX,y1],[edgeRX+ew,y1],[edgeRX+ew,y1+bh],[edgeRX,y1+bh]], block:edgeBlk, partial:true});
+      for (var ri = 0; ri < rowData.length - 1; ri += 2) {
+        var y0 = rowData[ri].y, y1 = rowData[ri+1].y;
+        // right side
+        if (allInPoly(rightXs[0], y0, ew, bh) && allInPoly(rightXs[0], y1, ew, bh)) {
+          var ex = rightXs[0];
+          tables.push({outline:[[ex,y0],[ex+ew,y0],[ex+ew,y0+bh],[ex,y0+bh]], block:edgeBlk, partial:true});
+          tables.push({outline:[[ex,y1],[ex+ew,y1],[ex+ew,y1+bh],[ex,y1+bh]], block:edgeBlk, partial:true});
         }
-        // left side — symmetric, verify both rows fit
-        if (allInPoly(edgeLX, y0, ew, bh) && allInPoly(edgeLX, y1, ew, bh)) {
-          tables.push({outline:[[edgeLX,y0],[edgeLX+ew,y0],[edgeLX+ew,y0+bh],[edgeLX,y0+bh]], block:edgeBlk, partial:true});
-          tables.push({outline:[[edgeLX,y1],[edgeLX+ew,y1],[edgeLX+ew,y1+bh],[edgeLX,y1+bh]], block:edgeBlk, partial:true});
+        // left side (symmetric)
+        if (allInPoly(lx, y0, ew, bh) && allInPoly(lx, y1, ew, bh)) {
+          tables.push({outline:[[lx,y0],[lx+ew,y0],[lx+ew,y0+bh],[lx,y0+bh]], block:edgeBlk, partial:true});
+          tables.push({outline:[[lx,y1],[lx+ew,y1],[lx+ew,y1+bh],[lx,y1+bh]], block:edgeBlk, partial:true});
         }
       }
     }
