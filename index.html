@@ -132,10 +132,31 @@ canvas{display:block;background:#1a2020;}
     <div class="card">
       <div class="ct">הגדרת בלוק שולחן</div>
       <div class="f" style="margin-bottom:10px;">
-        <label>פאנלים לסטרינג</label>
-        <div class="rg" id="pps-row">
-          <div class="rb on" onclick="setPPS(28,this)">28 פאנלים</div>
-          <div class="rb" onclick="setPPS(27,this)">27 פאנלים</div>
+        <label>מצב הגדרה</label>
+        <div class="rg" id="block-mode-row">
+          <div class="rb on" onclick="setBlockMode('library',this)">📚 מספריית בלוקים</div>
+          <div class="rb" onclick="setBlockMode('manual',this)">✏️ הגדרה ידנית</div>
+        </div>
+      </div>
+      <!-- Library mode -->
+      <div id="library-mode-box">
+        <div class="f" style="margin-bottom:10px;">
+          <label>פאנלים לסטרינג</label>
+          <div class="rg" id="pps-row">
+            <div class="rb on" onclick="setPPS(28,this)">28 פאנלים</div>
+            <div class="rb" onclick="setPPS(27,this)">27 פאנלים</div>
+          </div>
+        </div>
+      </div>
+      <!-- Manual mode -->
+      <div id="manual-mode-box" style="display:none;">
+        <div class="g2" style="margin-bottom:8px;">
+          <div class="f"><label>פאנלים לסטרינג</label><input type="number" id="manual_pps" value="28" min="1" oninput="updateBlockPreview()"/></div>
+          <div class="f"><label>סטרינגים לשולחן</label><input type="number" id="manual_strings" value="1" min="1" oninput="updateBlockPreview()"/></div>
+        </div>
+        <div class="g2" style="margin-bottom:8px;">
+          <div class="f"><label>שורות פאנלים (גובה)</label><input type="number" id="manual_rows" value="3" min="1" oninput="updateBlockPreview()"/></div>
+          <div class="f"><label>מרווח בין פאנלים (מ"מ)</label><input type="number" id="manual_gap" value="20" min="0" oninput="updateBlockPreview()"/></div>
         </div>
       </div>
       <div id="block-preview" style="font-size:11px;color:var(--mut);background:var(--bg);border:1px solid var(--bdr);border-radius:7px;padding:8px;line-height:1.8;"></div>
@@ -292,6 +313,51 @@ var resultBlob = null;
 
 var BLOCK_LIBRARY = [{"name":"SAT_1P_1S_28P","tech":"SAT","tracker_type":"1P","strings":1,"panels_per_string":28,"total_panels":28,"w":2.384,"h":39.9342,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[2.384,39.9342],[2.384,0.0],[0.0,0.0],[0.0,39.9342]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[2.384,39.9342],[2.384,1.0508],[0.0,1.0508],[0.0,39.9342]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[2.384,1.0812],[2.384,0.0],[0.0,0.0],[0.0,1.0812]]}]},{"name":"SAT_1P_2S_28P","tech":"SAT","tracker_type":"1P","strings":2,"panels_per_string":28,"total_panels":56,"w":2.384,"h":77.7364,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,77.7364],[2.384,77.7364],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,38.8834],[2.384,38.8834],[2.384,0.0]]},{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,38.853],[0.0,77.7364],[2.384,77.7364],[2.384,38.853]]}]},{"name":"SAT_1P_3S_28P","tech":"SAT","tracker_type":"1P","strings":3,"panels_per_string":28,"total_panels":84,"w":2.384,"h":115.45,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,115.45],[2.384,115.45],[2.384,0.0]]}]},{"name":"SAT_1P_4S_28P","tech":"SAT","tracker_type":"1P","strings":4,"panels_per_string":28,"total_panels":112,"w":2.384,"h":152.6614,"polys":[{"layer":"AVO_Structure-Tracker 1P 1X27","pts":[[0.0,0.0],[0.0,152.6614],[2.384,152.6614],[2.384,0.0]]}]},{"name":"SAT_2P_2S_27P","tech":"SAT","tracker_type":"2P","strings":2,"panels_per_string":27,"total_panels":54,"w":31.728,"h":4.696,"polys":[{"layer":"GA_Component","pts":[[0.12,4.696],[1.254,4.696],[1.254,2.418],[0.12,2.418]]},{"layer":"GA_Component","pts":[[0.12,2.278],[1.254,2.278],[1.254,0.0],[0.12,0.0]]}]},{"name":"SAT_2P_4S_27P","tech":"SAT","tracker_type":"2P","strings":4,"panels_per_string":27,"total_panels":108,"w":62.724,"h":4.696,"polys":[{"layer":"GA_Component","pts":[[0.12,4.696],[1.254,4.696],[1.254,2.418],[0.12,2.418]]}]},{"name":"FIX_3P_1S_27P","tech":"FIX","tracker_type":"FIX","strings":1,"panels_per_string":27,"total_panels":81,"w":35.75,"h":2.389,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[35.75,0],[35.75,2.389],[0,2.389],[0,0]]}]},{"name":"FIX_3P_1S_28P","tech":"FIX","tracker_type":"FIX","strings":1,"panels_per_string":28,"total_panels":84,"w":37.0749,"h":2.389,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[37.07488461538461,0],[37.07488461538461,2.389],[0,2.389],[0,0]]}]},{"name":"FIX_3P_2S_27P","tech":"FIX","tracker_type":"FIX","strings":2,"panels_per_string":27,"total_panels":162,"w":35.75,"h":4.798,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[35.75,0],[35.75,4.797999999999999],[0,4.797999999999999],[0,0]]}]},{"name":"FIX_3P_2S_28P","tech":"FIX","tracker_type":"FIX","strings":2,"panels_per_string":28,"total_panels":168,"w":37.0749,"h":4.798,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[37.07488461538461,0],[37.07488461538461,4.797999999999999],[0,4.797999999999999],[0,0]]}]},{"name":"FIX_3P_3S_27P","tech":"FIX","tracker_type":"FIX","strings":3,"panels_per_string":27,"total_panels":243,"w":35.75,"h":7.207,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[35.75,0],[35.75,7.207],[0,7.207],[0,0]]}]},{"name":"FIX_3P_3S_28P","tech":"FIX","tracker_type":"FIX","strings":3,"panels_per_string":28,"total_panels":252,"w":37.0749,"h":7.207,"polys":[{"layer":"FIX_OUTLINE","pts":[[0,0],[37.07488461538461,0],[37.07488461538461,7.207],[0,7.207],[0,0]]}]}];
 var selectedPPS = 28;
+var blockMode = 'library';
+
+function setBlockMode(mode, el) {
+  blockMode = mode;
+  document.querySelectorAll('#block-mode-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('library-mode-box').style.display = (mode === 'library') ? '' : 'none';
+  document.getElementById('manual-mode-box').style.display = (mode === 'manual') ? '' : 'none';
+  updateBlockPreview();
+}
+
+function getManualBlock() {
+  var pH = fv('panel_h') / 1000;
+  var pW = fv('panel_w') / 1000;
+  var pps = parseInt(document.getElementById('manual_pps').value) || 28;
+  var strings = parseInt(document.getElementById('manual_strings').value) || 1;
+  var rows = parseInt(document.getElementById('manual_rows').value) || 3;
+  var gap = (parseInt(document.getElementById('manual_gap').value) || 20) / 1000;
+  var isPortrait = (orient === 'portrait');
+  var panelLen = isPortrait ? pH : pW;
+  var panelHt  = isPortrait ? pW : pH;
+  var tableLen = pps * panelLen + (pps - 1) * gap;
+  var isSAT1P = (tech === 'sat' && trk === '1p');
+  var isSAT2P = (tech === 'sat' && trk === '2p');
+  var totalW, totalH;
+  if (isSAT1P) {
+    totalW = panelHt * rows + (rows - 1) * gap;
+    totalH = tableLen * strings + (strings - 1) * gap * 2;
+  } else if (isSAT2P) {
+    totalW = tableLen * strings + (strings - 1) * gap * 2;
+    totalH = panelHt * rows + (rows - 1) * gap;
+  } else {
+    totalW = tableLen;
+    totalH = (panelHt * rows + (rows - 1) * gap) * strings + (strings - 1) * gap;
+  }
+  var total_panels = pps * strings * rows;
+  return [{
+    name: 'MANUAL_CUSTOM',
+    tech: (isSAT1P || isSAT2P) ? 'SAT' : 'FIX',
+    tracker_type: isSAT2P ? '2P' : (isSAT1P ? '1P' : 'FIX'),
+    strings: strings, panels_per_string: pps, total_panels: total_panels,
+    w: totalW, h: totalH,
+    polys: [{layer:'TABLE_OUTLINE', pts:[[0,0],[totalW,0],[totalW,totalH],[0,totalH],[0,0]]}]
+  }];
+}
 
 function setPPS(n, el) {
   selectedPPS = n;
@@ -301,6 +367,7 @@ function setPPS(n, el) {
 }
 
 function getActiveBlocks() {
+  if (blockMode === 'manual') return getManualBlock();
   var isSAT = (tech !== 'fixed');
   var trackerType = (trk === '2p') ? '2P' : '1P';
   return BLOCK_LIBRARY.filter(function(b) {
@@ -314,6 +381,13 @@ function updateBlockPreview() {
   var el = document.getElementById('block-preview');
   if (!el) return;
   if (!blocks.length) { el.innerHTML = 'אין בלוקים זמינים'; return; }
+  if (blockMode === 'manual') {
+    var b = blocks[0];
+    el.innerHTML = '<strong>בלוק ידני:</strong><br>'
+      + '&#9658; ' + b.total_panels + ' פאנלים (' + b.strings + ' סטרינג × ' + b.panels_per_string + ' פאנלים)<br>'
+      + '&#9658; גודל שולחן: ' + b.w.toFixed(2) + ' × ' + b.h.toFixed(2) + ' מ\'';
+    return;
+  }
   var html = '<strong>בלוקים פעילים:</strong><br>';
   blocks.forEach(function(b) {
     html += '&#9658; ' + b.name + ' &mdash; ' + b.total_panels + ' פאנלים, ' + b.w.toFixed(1) + 'x' + b.h.toFixed(1) + 'm<br>';
