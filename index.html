@@ -116,7 +116,6 @@ canvas{display:block;background:#1a2020;}
         <div class="sub-t">🌊 הגדרות אי צף</div>
         <div class="g2">
           <div class="f"><label>Setback מהגדה (מ')</label><input type="number" id="float_setback" value="15" step="1"/></div>
-          <div class="f"><label>Tilt מקסימלי (°)</label><input type="number" id="float_tilt_max" value="12" step="1"/></div>
         </div>
         <div class="f" style="margin-top:8px;">
           <label>סימטריה</label>
@@ -137,7 +136,7 @@ canvas{display:block;background:#1a2020;}
         <div class="f"><label>הספק (Wp)</label><input type="number" id="panel_wp" value="580"/></div>
       </div>
       <div class="dv"></div>
-      <div class="f"><label>אוריינטציה</label>
+      <div class="f" id="orient-wrap"><label>אוריינטציה</label>
         <div class="rg" id="orient-row" style="margin-top:3px;">
           <div class="rb on" onclick="setOrient('portrait',this)">Portrait (אנכי)</div>
           <div class="rb" onclick="setOrient('landscape',this)">Landscape (אופקי)</div>
@@ -145,7 +144,7 @@ canvas{display:block;background:#1a2020;}
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="block-card">
       <div class="ct">הגדרת בלוק שולחן</div>
       <div class="f" style="margin-bottom:10px;">
         <label>מצב הגדרה</label>
@@ -180,7 +179,7 @@ canvas{display:block;background:#1a2020;}
 
     <div class="card">
       <div class="ct">פרמטרי מערך</div>
-      <div class="f" style="margin-bottom:10px;">
+      <div class="f" id="align-wrap" style="margin-bottom:10px;">
         <label>כיוון פריסה</label>
         <div class="rg" id="align-row" style="margin-top:3px;">
           <div class="rb on" onclick="setAlign('south',this)">True South — דרום אמיתי</div>
@@ -200,7 +199,7 @@ canvas{display:block;background:#1a2020;}
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="edge-card">
       <div class="ct">טיפול בקצוות פולגון</div>
       <label class="eo"><input type="radio" name="edge" value="partial" checked/> שולחן חלקי בקצה</label>
       <label class="eo"><input type="radio" name="edge" value="full"/> שולחנות שלמים בלבד</label>
@@ -583,16 +582,30 @@ function setTech(v, el) {
   document.querySelectorAll('#tech-row .rb').forEach(function(b){b.classList.remove('on');});
   el.classList.add('on');
   updateBlockPreview();
-  var isSat = (v === 'sat');
+  var isSat   = (v === 'sat');
   var isFloat = (v === 'float');
+
+  // SAT box
   document.getElementById('sat-box').style.display = isSat ? 'block' : 'none';
-  document.getElementById('float-box').style.display = isFloat ? 'block' : 'none';
   document.getElementById('tilt').disabled = isSat;
   document.getElementById('tilt-note').style.display = isSat ? 'block' : 'none';
+
+  // Float box
+  document.getElementById('float-box').style.display = isFloat ? 'block' : 'none';
+
+  // Hide/show elements not relevant for float
+  var hideForFloat = ['orient-wrap','block-card','edge-card','align-wrap','azimuth-wrap'];
+  hideForFloat.forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.style.display = isFloat ? 'none' : '';
+  });
+
+  // Float: set azimuth to 180 (south), set tilt default to 12 if coming from other mode
   if (isFloat) {
-    var tiltEl = document.getElementById('tilt');
-    var maxTilt = parseInt(document.getElementById('float_tilt_max').value) || 12;
-    if (parseFloat(tiltEl.value) > maxTilt) tiltEl.value = maxTilt;
+    document.getElementById('azimuth').value = 180;
+    if (!document.getElementById('tilt').dataset.userSet) {
+      document.getElementById('tilt').value = 12;
+    }
   }
 }
 
@@ -772,107 +785,120 @@ function longestEdgeAzimuth(poly) {
 
 // ── LAYOUT (FIXED - no overlapping tables) ───────────────────────
 function computeFloatLayout(poly) {
-  // Floating solar: symmetric, centered, only whole blocks, string-aware edge rows
-  var az  = (alignMode==='polygon') ? longestEdgeAzimuth(poly) : fv('azimuth');
+  // Floating solar: symmetric, centered, only whole blocks
+  // Strategy: find max grid that fits, center it, verify every block with allIn
+  var az  = 180; // always south for floating
   var rsp = fv('row_spacing');
   var sb  = parseFloat(document.getElementById('float_setback').value) || 15;
   var pWp = fv('panel_wp');
-  var PPS = 28; // panels per string (use selected)
-  try { PPS = parseInt(document.getElementById('manual_pps').value) || 28; } catch(e){}
+  var PPS = selectedPPS || 28;
 
-  var blocks = getActiveBlocks();
-  if (!blocks.length) throw new Error('אין בלוקים זמינים.');
-  var blk = blocks[0]; // use largest block for floating
-  var bw = blk.w, bh = blk.h;
-  var GAP = 0.02;
+  // For floating, use a simple rectangular block based on panel dimensions
+  // portrait: bw = panel_w (short side), bh = panel_h (long side) — 1 panel per table unit
+  // The "block" for floating is just one table row (PPS panels side by side)
+  var pH = fv('panel_h') / 1000; // long side in meters
+  var pW = fv('panel_w') / 1000; // short side
+  // Portrait: panels in row along long axis, table width = PPS * pW, height = pH
+  var bw = PPS * pW + (PPS - 1) * 0.02; // table width (along row)
+  var bh = pH;                            // table height (1 panel tall)
+  var GAP = 0.05; // gap between tables in same row
 
   var sh = shrink(poly, sb);
   var c  = centroid(sh);
   var cx = c[0], cy = c[1];
-  var rr = -(az - 180) * Math.PI / 180;
+  var rr = -(az - 180) * Math.PI / 180; // rr=0 for south (az=180)
   var rs = sh.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
   var b  = bbox(rs);
 
-  var isSAT = (tech !== 'fixed' && tech !== 'float');
-
-  // How many full blocks fit in each axis
   var totalW = b.mxx - b.mnx;
   var totalH = b.mxy - b.mny;
 
-  var nCols, nRows;
-  if (!isSAT) {
-    // FIX / FLOAT: rows along Y (pitch), cols along X
-    nCols = Math.floor((totalW + GAP) / (bw + GAP));
-    nRows = Math.floor((totalH + GAP) / (rsp));
-  } else {
-    nCols = Math.floor((totalH + GAP) / (bw + GAP));
-    nRows = Math.floor((totalW + GAP) / (rsp));
+  // allIn check for rotated space
+  function allInRot(x, y, w, h) {
+    var corners = [[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+    for (var i=0;i<4;i++) if (!pip(corners[i][0],corners[i][1],rs)) return false;
+    return true;
   }
 
-  // Edge rows: can we add partial rows (2 rows × ~half string)?
-  // A partial column of panels is valid if 2 adjacent rows × panelCount >= 24
-  function tryEdgeCols(n, availW) {
-    // remaining space after n full cols
-    var used = n * (bw + GAP) - GAP;
-    var rem = availW - used;
-    if (rem < 0.5) return 0; // not enough space
-    // panels that fit in remaining space
-    var panelW = (orient==='portrait') ? (fv('panel_h')/1000) : (fv('panel_w')/1000);
-    var panelCount = Math.floor((rem + GAP/2) / (panelW + GAP/100));
-    if (panelCount < 1) return 0;
-    // 2 rows × panelCount >= 24?
-    if (2 * panelCount >= 24) return panelCount;
-    return 0;
+  // Step 1: find max nCols and nRows where ALL blocks in a full grid fit
+  // Start with max possible and shrink until all fit
+  var maxCols = Math.floor((totalW + GAP) / (bw + GAP));
+  var maxRows = Math.floor((totalH + GAP) / (rsp));
+
+  // For each candidate (nCols, nRows), center and test all 4 corner blocks
+  function testGrid(nC, nR) {
+    if (nC <= 0 || nR <= 0) return false;
+    var gw = nC * (bw + GAP) - GAP;
+    var gh = nR * rsp - (rsp - bh);
+    var sx = b.mnx + (totalW - gw) / 2;
+    var sy = b.mny + (totalH - gh) / 2;
+    // Test all 4 corners + center blocks
+    var testCols = [0, Math.floor(nC/2), nC-1];
+    var testRows = [0, Math.floor(nR/2), nR-1];
+    for (var ri=0; ri<testRows.length; ri++) {
+      for (var ci=0; ci<testCols.length; ci++) {
+        var x = sx + testCols[ci] * (bw + GAP);
+        var y = sy + testRows[ri] * rsp;
+        if (!allInRot(x, y, bw, bh)) return false;
+      }
+    }
+    return true;
   }
 
-  var hasEdge = false;
-  var edgePanels = 0;
-  if (floatSym !== 'none' && nCols > 0) {
-    edgePanels = tryEdgeCols(nCols, totalW);
-    hasEdge = (edgePanels > 0);
-  }
+  // Find best nCols: shrink until fits
+  var nCols = maxCols;
+  while (nCols > 0 && !testGrid(nCols, 1)) nCols--;
 
-  // Symmetry: center the grid
-  var gridW = nCols * (bw + GAP) - GAP + (hasEdge ? (edgePanels*(fv('panel_h')/1000+0.02)+GAP) : 0);
+  var nRows = maxRows;
+  while (nRows > 0 && !testGrid(nCols, nRows)) nRows--;
+
+  if (nCols <= 0 || nRows <= 0) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה או Row Spacing.');
+
+  // Step 2: center the grid
+  var gridW = nCols * (bw + GAP) - GAP;
   var gridH = nRows * rsp - (rsp - bh);
   var startX = b.mnx + (totalW - gridW) / 2;
   var startY = b.mny + (totalH - gridH) / 2;
 
-  // Force symmetry: if auto and centering gives <5% edge offset, just center
-  if (floatSym === 'force' || floatSym === 'auto') {
-    // already centered above
-  }
-
+  // Step 3: place all blocks, verify each one individually
   var tables = [];
+  var blkProto = {name:'FLOAT', tech:'FIX', tracker_type:'FIX',
+    strings:1, panels_per_string:PPS, total_panels:PPS, w:bw, h:bh,
+    polys:[{layer:'TABLE_OUTLINE', pts:[[0,0],[bw,0],[bw,bh],[0,bh],[0,0]]}]};
 
   for (var row=0; row<nRows; row++) {
     var y = startY + row * rsp;
     for (var col=0; col<nCols; col++) {
       var x = startX + col * (bw + GAP);
+      if (!allInRot(x, y, bw, bh)) continue; // skip any that don't fit
       var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
         return rot(p[0],p[1],cx,cy,-rr);
       });
-      tables.push({outline:outline, block:blk, rotX:x, rotY:y, partial:false});
+      tables.push({outline:outline, block:blkProto, rotX:x, rotY:y, partial:false});
     }
-    // Edge column (partial, 2-row string)
-    if (hasEdge && row % 2 === 0 && row + 1 < nRows) {
-      var panelW = (orient==='portrait') ? (fv('panel_h')/1000) : (fv('panel_w')/1000);
-      var panelH = (orient==='portrait') ? (fv('panel_w')/1000) : (fv('panel_h')/1000);
-      var ex = startX + nCols * (bw + GAP);
-      var ew = edgePanels * (panelW + 0.02) - 0.02;
-      // row 0 of pair
-      var y0 = startY + row * rsp;
-      var out0 = [[ex,y0],[ex+ew,y0],[ex+ew,y0+bh],[ex,y0+bh]].map(function(p){
-        return rot(p[0],p[1],cx,cy,-rr);
-      });
-      var ep0 = edgePanels;
-      tables.push({outline:out0, block:Object.assign({},blk,{total_panels:ep0, name:'EDGE'}), rotX:ex, rotY:y0, partial:true});
-      // row 1 of pair
-      var y1 = startY + (row+1) * rsp;
-      var out1 = [[ex,y1],[ex+ew,y1],[ex+ew,y1+bh],[ex,y1+bh]].map(function(p){
-        return rot(p[0],p[1],cx,cy,-rr);
-      });
-      tables.push({outline:out1, block:Object.assign({},blk,{total_panels:ep0, name:'EDGE'}), rotX:ex, rotY:y1, partial:true});
+  }
+
+  // Step 4: edge columns — 2 adjacent rows, each with edgePanels panels, total >= 24
+  if (floatSym !== 'none') {
+    var usedW = gridW;
+    var remW = totalW - usedW;
+    var edgeX = startX + gridW + GAP;
+    if (remW >= pW + 0.1) {
+      var edgePanels = Math.floor((remW - GAP + 0.001) / (pW + 0.02));
+      if (edgePanels >= 1 && 2 * edgePanels >= 24) {
+        var ew = edgePanels * pW + (edgePanels - 1) * 0.02;
+        var edgeBlk = Object.assign({}, blkProto, {total_panels: edgePanels, panels_per_string: edgePanels, w: ew, name:'FLOAT_EDGE'});
+        for (var row=0; row<nRows-1; row+=2) {
+          var y0 = startY + row * rsp;
+          var y1 = startY + (row+1) * rsp;
+          if (allInRot(edgeX, y0, ew, bh) && allInRot(edgeX, y1, ew, bh)) {
+            var out0 = [[edgeX,y0],[edgeX+ew,y0],[edgeX+ew,y0+bh],[edgeX,y0+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
+            var out1 = [[edgeX,y1],[edgeX+ew,y1],[edgeX+ew,y1+bh],[edgeX,y1+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
+            tables.push({outline:out0, block:edgeBlk, rotX:edgeX, rotY:y0, partial:true});
+            tables.push({outline:out1, block:edgeBlk, rotX:edgeX, rotY:y1, partial:true});
+          }
+        }
+      }
     }
   }
 
@@ -880,6 +906,7 @@ function computeFloatLayout(poly) {
   var tp = tables.reduce(function(s,t){return s+t.block.total_panels;},0);
   return {tables:tables, shrunk:sh, totalPanels:tp, kw:tp*pWp/1000, cx:cx, cy:cy, rr:rr, floating:true};
 }
+
 
 function computeLayout(poly) {
   var az  = (alignMode==='polygon') ? longestEdgeAzimuth(poly) : fv('azimuth');
