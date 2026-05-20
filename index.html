@@ -103,12 +103,28 @@ canvas{display:block;background:#1a2020;}
       <div class="rg" id="tech-row">
         <div class="rb on" onclick="setTech('fixed',this)">Fixed Tilt</div>
         <div class="rb" onclick="setTech('sat',this)">Single Axis Tracker (SAT)</div>
+        <div class="rb" onclick="setTech('float',this)">🌊 אי צף</div>
       </div>
       <div id="sat-box" class="sub" style="display:none;">
         <div class="sub-t">התקנה על ציר</div>
         <div class="rg" id="trk-row">
           <div class="rb on" onclick="setTrk('1p',this)">1P</div>
           <div class="rb" onclick="setTrk('2p',this)">2P</div>
+        </div>
+      </div>
+      <div id="float-box" class="sub" style="display:none;">
+        <div class="sub-t">🌊 הגדרות אי צף</div>
+        <div class="g2">
+          <div class="f"><label>Setback מהגדה (מ')</label><input type="number" id="float_setback" value="15" step="1"/></div>
+          <div class="f"><label>Tilt מקסימלי (°)</label><input type="number" id="float_tilt_max" value="12" step="1"/></div>
+        </div>
+        <div class="f" style="margin-top:8px;">
+          <label>סימטריה</label>
+          <div class="rg" id="float-sym-row">
+            <div class="rb on" onclick="setFloatSym('auto',this)">אוטומטי</div>
+            <div class="rb" onclick="setFloatSym('force',this)">כפה סימטריה</div>
+            <div class="rb" onclick="setFloatSym('none',this)">ללא</div>
+          </div>
         </div>
       </div>
     </div>
@@ -306,6 +322,13 @@ canvas{display:block;background:#1a2020;}
 
 <script>
 var tech = 'fixed';
+var floatSym = 'auto';
+
+function setFloatSym(v, el) {
+  floatSym = v;
+  document.querySelectorAll('#float-sym-row .rb').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+}
 var orient = 'portrait';
 var trk = '1p';
 var selectedFile = null;
@@ -538,7 +561,7 @@ function bessExclusionPolys() {
 function autoRecalc() {
   if (!lastPoly) return;
   try {
-    var res = computeLayout(lastPoly);
+    var res = (tech==='float') ? computeFloatLayout(lastPoly) : computeLayout(lastPoly);
     lastRes = res;
     var dxf = writeDxf(res, lastPoly);
     resultBlob = new Blob([dxf], {type:'application/dxf'});
@@ -561,9 +584,16 @@ function setTech(v, el) {
   el.classList.add('on');
   updateBlockPreview();
   var isSat = (v === 'sat');
+  var isFloat = (v === 'float');
   document.getElementById('sat-box').style.display = isSat ? 'block' : 'none';
+  document.getElementById('float-box').style.display = isFloat ? 'block' : 'none';
   document.getElementById('tilt').disabled = isSat;
   document.getElementById('tilt-note').style.display = isSat ? 'block' : 'none';
+  if (isFloat) {
+    var tiltEl = document.getElementById('tilt');
+    var maxTilt = parseInt(document.getElementById('float_tilt_max').value) || 12;
+    if (parseFloat(tiltEl.value) > maxTilt) tiltEl.value = maxTilt;
+  }
 }
 
 function setTrk(v, el) {
@@ -741,6 +771,116 @@ function longestEdgeAzimuth(poly) {
 }
 
 // ── LAYOUT (FIXED - no overlapping tables) ───────────────────────
+function computeFloatLayout(poly) {
+  // Floating solar: symmetric, centered, only whole blocks, string-aware edge rows
+  var az  = (alignMode==='polygon') ? longestEdgeAzimuth(poly) : fv('azimuth');
+  var rsp = fv('row_spacing');
+  var sb  = parseFloat(document.getElementById('float_setback').value) || 15;
+  var pWp = fv('panel_wp');
+  var PPS = 28; // panels per string (use selected)
+  try { PPS = parseInt(document.getElementById('manual_pps').value) || 28; } catch(e){}
+
+  var blocks = getActiveBlocks();
+  if (!blocks.length) throw new Error('אין בלוקים זמינים.');
+  var blk = blocks[0]; // use largest block for floating
+  var bw = blk.w, bh = blk.h;
+  var GAP = 0.02;
+
+  var sh = shrink(poly, sb);
+  var c  = centroid(sh);
+  var cx = c[0], cy = c[1];
+  var rr = -(az - 180) * Math.PI / 180;
+  var rs = sh.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
+  var b  = bbox(rs);
+
+  var isSAT = (tech !== 'fixed' && tech !== 'float');
+
+  // How many full blocks fit in each axis
+  var totalW = b.mxx - b.mnx;
+  var totalH = b.mxy - b.mny;
+
+  var nCols, nRows;
+  if (!isSAT) {
+    // FIX / FLOAT: rows along Y (pitch), cols along X
+    nCols = Math.floor((totalW + GAP) / (bw + GAP));
+    nRows = Math.floor((totalH + GAP) / (rsp));
+  } else {
+    nCols = Math.floor((totalH + GAP) / (bw + GAP));
+    nRows = Math.floor((totalW + GAP) / (rsp));
+  }
+
+  // Edge rows: can we add partial rows (2 rows × ~half string)?
+  // A partial column of panels is valid if 2 adjacent rows × panelCount >= 24
+  function tryEdgeCols(n, availW) {
+    // remaining space after n full cols
+    var used = n * (bw + GAP) - GAP;
+    var rem = availW - used;
+    if (rem < 0.5) return 0; // not enough space
+    // panels that fit in remaining space
+    var panelW = (orient==='portrait') ? (fv('panel_h')/1000) : (fv('panel_w')/1000);
+    var panelCount = Math.floor((rem + GAP/2) / (panelW + GAP/100));
+    if (panelCount < 1) return 0;
+    // 2 rows × panelCount >= 24?
+    if (2 * panelCount >= 24) return panelCount;
+    return 0;
+  }
+
+  var hasEdge = false;
+  var edgePanels = 0;
+  if (floatSym !== 'none' && nCols > 0) {
+    edgePanels = tryEdgeCols(nCols, totalW);
+    hasEdge = (edgePanels > 0);
+  }
+
+  // Symmetry: center the grid
+  var gridW = nCols * (bw + GAP) - GAP + (hasEdge ? (edgePanels*(fv('panel_h')/1000+0.02)+GAP) : 0);
+  var gridH = nRows * rsp - (rsp - bh);
+  var startX = b.mnx + (totalW - gridW) / 2;
+  var startY = b.mny + (totalH - gridH) / 2;
+
+  // Force symmetry: if auto and centering gives <5% edge offset, just center
+  if (floatSym === 'force' || floatSym === 'auto') {
+    // already centered above
+  }
+
+  var tables = [];
+
+  for (var row=0; row<nRows; row++) {
+    var y = startY + row * rsp;
+    for (var col=0; col<nCols; col++) {
+      var x = startX + col * (bw + GAP);
+      var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
+        return rot(p[0],p[1],cx,cy,-rr);
+      });
+      tables.push({outline:outline, block:blk, rotX:x, rotY:y, partial:false});
+    }
+    // Edge column (partial, 2-row string)
+    if (hasEdge && row % 2 === 0 && row + 1 < nRows) {
+      var panelW = (orient==='portrait') ? (fv('panel_h')/1000) : (fv('panel_w')/1000);
+      var panelH = (orient==='portrait') ? (fv('panel_w')/1000) : (fv('panel_h')/1000);
+      var ex = startX + nCols * (bw + GAP);
+      var ew = edgePanels * (panelW + 0.02) - 0.02;
+      // row 0 of pair
+      var y0 = startY + row * rsp;
+      var out0 = [[ex,y0],[ex+ew,y0],[ex+ew,y0+bh],[ex,y0+bh]].map(function(p){
+        return rot(p[0],p[1],cx,cy,-rr);
+      });
+      var ep0 = edgePanels;
+      tables.push({outline:out0, block:Object.assign({},blk,{total_panels:ep0, name:'EDGE'}), rotX:ex, rotY:y0, partial:true});
+      // row 1 of pair
+      var y1 = startY + (row+1) * rsp;
+      var out1 = [[ex,y1],[ex+ew,y1],[ex+ew,y1+bh],[ex,y1+bh]].map(function(p){
+        return rot(p[0],p[1],cx,cy,-rr);
+      });
+      tables.push({outline:out1, block:Object.assign({},blk,{total_panels:ep0, name:'EDGE'}), rotX:ex, rotY:y1, partial:true});
+    }
+  }
+
+  if (!tables.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
+  var tp = tables.reduce(function(s,t){return s+t.block.total_panels;},0);
+  return {tables:tables, shrunk:sh, totalPanels:tp, kw:tp*pWp/1000, cx:cx, cy:cy, rr:rr, floating:true};
+}
+
 function computeLayout(poly) {
   var az  = (alignMode==='polygon') ? longestEdgeAzimuth(poly) : fv('azimuth');
   var rsp = fv('row_spacing');
@@ -1090,7 +1230,12 @@ function drawPreview(res, orig) {
 
   dp(orig,'#f55',null,1.5);
   dp(res.shrunk,'#555',null,1);
-  for (var i=0;i<res.tables.length;i++) dp(res.tables[i].outline,'#4c8','rgba(76,200,130,0.15)',1.5);
+  for (var i=0;i<res.tables.length;i++) {
+    var t=res.tables[i];
+    var stroke = res.floating ? (t.partial ? '#f0c040' : '#40b8ff') : (t.partial ? '#f0c040' : '#4c8');
+    var fill   = res.floating ? (t.partial ? 'rgba(240,192,64,0.2)' : 'rgba(64,184,255,0.15)') : (t.partial ? 'rgba(240,192,64,0.2)' : 'rgba(76,200,130,0.15)');
+    dp(t.outline, stroke, fill, 1.5);
+  }
 
   if (electricalRoom) {
     erWorldPolys().forEach(function(pts) {
@@ -1235,7 +1380,7 @@ function runLayout() {
           var text=e.target.result;
           var poly=parseDxf(text);
           lastPoly=poly;
-          var res=computeLayout(poly);
+          var res=(tech==='float') ? computeFloatLayout(poly) : computeLayout(poly);
           lastRes=res;
           var dxf=writeDxf(res,poly);
           resultBlob=new Blob([dxf],{type:'application/dxf'});
