@@ -785,121 +785,106 @@ function longestEdgeAzimuth(poly) {
 
 // ── LAYOUT (FIXED - no overlapping tables) ───────────────────────
 function computeFloatLayout(poly) {
-  var az  = 180; // always south
+  var az  = 180;
   var rsp = fv('row_spacing');
   var sb  = parseFloat(document.getElementById('float_setback').value) || 15;
   var pWp = fv('panel_wp');
-
-  // Single panel dimensions (portrait)
-  var pH = fv('panel_h') / 1000; // long side = table height
-  var pW = fv('panel_w') / 1000; // short side = table width
-  var bw = pW;   // one panel wide
-  var bh = pH;   // one panel tall
-  var GAP_COL = 0.02; // gap between panels in same row
-  var PPS = selectedPPS || 28; // panels per string
+  var pH  = fv('panel_h') / 1000;
+  var pW  = fv('panel_w') / 1000;
+  var bw  = pW;
+  var bh  = pH;
+  var GAP = 0.02;
 
   var sh = shrink(poly, sb);
   var c  = centroid(sh);
   var cx = c[0], cy = c[1];
-  var rr = 0; // south = no rotation
-  var rs = sh.map(function(p){ return rot(p[0],p[1],cx,cy,rr); });
-  var b  = bbox(rs);
+  var rs = sh; // az=180 → rr=0, no rotation needed
+  var bb = bbox(rs);
 
-  var totalW = b.mxx - b.mnx;
-  var totalH = b.mxy - b.mny;
-
-  function allInRot(x, y, w, h) {
-    return pip(x,    y,    rs) && pip(x+w, y,    rs) &&
-           pip(x+w, y+h,  rs) && pip(x,   y+h,  rs);
+  function allInPoly(x, y, w, h) {
+    return pip(x,   y,   rs) && pip(x+w, y,   rs) &&
+           pip(x+w, y+h, rs) && pip(x,   y+h, rs);
   }
 
-  // Max panels per row and max rows
-  var maxCols = Math.floor((totalW + GAP_COL) / (bw + GAP_COL));
-  var maxRows = Math.floor((totalH + GAP_COL) / (rsp));
-
-  // Find nCols: shrink until corner panels fit
-  function testGrid(nC, nR) {
-    if (nC <= 0 || nR <= 0) return false;
-    var gw = nC * (bw + GAP_COL) - GAP_COL;
-    var gh = nR * rsp - (rsp - bh);
-    var sx = b.mnx + (totalW - gw) / 2;
-    var sy = b.mny + (totalH - gh) / 2;
-    // test all 4 corners
-    var ex = sx + (nC-1) * (bw + GAP_COL);
-    var ey = sy + (nR-1) * rsp;
-    return allInRot(sx, sy, bw, bh) &&
-           allInRot(ex, sy, bw, bh) &&
-           allInRot(sx, ey, bw, bh) &&
-           allInRot(ex, ey, bw, bh);
+  // Step 1: scan all panels row by row, store absolute X of each fitting panel
+  var rowData = [];
+  var y = bb.mny;
+  while (y + bh <= bb.mxy + 0.01) {
+    var xs = [];
+    var x = bb.mnx;
+    while (x + bw <= bb.mxx + 0.01) {
+      if (allInPoly(x, y, bw, bh)) xs.push(x);
+      x += bw + GAP;
+    }
+    if (xs.length > 0) rowData.push({y: y, xs: xs});
+    y += rsp;
   }
 
-  var nCols = maxCols;
-  while (nCols > 0 && !testGrid(nCols, maxRows)) nCols--;
-  var nRows = maxRows;
-  while (nRows > 0 && !testGrid(nCols, nRows)) nRows--;
+  if (!rowData.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
 
-  if (nCols <= 0 || nRows <= 0)
-    throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
+  // Step 2: find min panels per row → symmetric grid width
+  var minCols = rowData.reduce(function(m,r){ return Math.min(m, r.xs.length); }, 9999);
 
-  var gridW = nCols * (bw + GAP_COL) - GAP_COL;
-  var gridH = nRows * rsp - (rsp - bh);
-  var startX = b.mnx + (totalW - gridW) / 2;
-  var startY = b.mny + (totalH - gridH) / 2;
-
-  // Build panel proto
+  // Step 3: for each row, pick minCols panels centered around row's center
   var panelBlk = {name:'FLOAT_PANEL', tech:'FIX', tracker_type:'FIX',
     strings:1, panels_per_string:1, total_panels:1, w:bw, h:bh,
     polys:[{layer:'TABLE_OUTLINE', pts:[[0,0],[bw,0],[bw,bh],[0,bh],[0,0]]}]};
 
   var tables = [];
-  for (var row=0; row<nRows; row++) {
-    var y = startY + row * rsp;
-    for (var col=0; col<nCols; col++) {
-      var x = startX + col * (bw + GAP_COL);
-      if (!allInRot(x, y, bw, bh)) continue;
-      var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
-        return rot(p[0],p[1],cx,cy,-rr);
-      });
-      tables.push({outline:outline, block:panelBlk, rotX:x, rotY:y, partial:false});
+  rowData.forEach(function(r) {
+    var n = r.xs.length;
+    var startI = Math.floor((n - minCols) / 2);
+    for (var ci = 0; ci < minCols; ci++) {
+      var x = r.xs[startI + ci];
+      var outline = [[x,r.y],[x+bw,r.y],[x+bw,r.y+bh],[x,r.y+bh]];
+      tables.push({outline:outline, block:panelBlk, rotX:x, rotY:r.y, partial:false});
     }
-  }
+  });
 
-  // Edge columns: 2 adjacent rows × edgePanels >= 24
-  if (floatSym !== 'none' && nCols > 0) {
-    var usedW = gridW + GAP_COL;
-    var remR = (totalW - gridW) / 2; // symmetric — same on both sides
-    if (remR >= bw) {
-      var edgePanels = Math.floor((remR + GAP_COL) / (bw + GAP_COL));
-      if (edgePanels >= 1 && 2 * edgePanels >= 24) {
-        var ew = edgePanels * (bw + GAP_COL) - GAP_COL;
-        // right edge
-        var edgeXR = startX + gridW + GAP_COL;
-        // left edge (symmetric)
-        var edgeXL = startX - GAP_COL - ew;
-        var edgeBlk = Object.assign({}, panelBlk, {
-          total_panels: edgePanels, panels_per_string: edgePanels, w: ew, name:'FLOAT_EDGE'
-        });
-        [[edgeXL, true], [edgeXR, true]].forEach(function(side) {
-          var ex = side[0];
-          for (var row=0; row<nRows-1; row+=2) {
-            var y0 = startY + row * rsp;
-            var y1 = startY + (row+1) * rsp;
-            if (allInRot(ex, y0, ew, bh) && allInRot(ex, y1, ew, bh)) {
-              var o0 = [[ex,y0],[ex+ew,y0],[ex+ew,y0+bh],[ex,y0+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
-              var o1 = [[ex,y1],[ex+ew,y1],[ex+ew,y1+bh],[ex,y1+bh]].map(function(p){ return rot(p[0],p[1],cx,cy,-rr); });
-              tables.push({outline:o0, block:edgeBlk, rotX:ex, rotY:y0, partial:true});
-              tables.push({outline:o1, block:edgeBlk, rotX:ex, rotY:y1, partial:true});
-            }
-          }
-        });
+  // Step 4: edge columns — symmetric on both sides, 2 adjacent rows × panels >= 24
+  if (floatSym !== 'none' && rowData.length >= 2) {
+    // Find leftmost and rightmost X of the core grid
+    var coreXmin = rowData[0].xs[Math.floor((rowData[0].xs.length - minCols) / 2)];
+    var coreXmax = coreXmin + minCols * (bw + GAP) - GAP;
+
+    rowData.forEach(function(r) {
+      var n = r.xs.length;
+      var si = Math.floor((n - minCols) / 2);
+      coreXmin = Math.max(coreXmin, r.xs[si]);
+      coreXmax = Math.min(coreXmax, r.xs[si] + minCols * (bw + GAP) - GAP);
+    });
+
+    // Right edge: panels available to the right of core
+    var rightXs = [];
+    var rx = coreXmax + GAP;
+    while (rx + bw <= bb.mxx + 0.01) { rightXs.push(rx); rx += bw + GAP; }
+
+    if (rightXs.length >= 1 && 2 * rightXs.length >= 24) {
+      var ew = rightXs.length * (bw + GAP) - GAP;
+      var lx = coreXmin - GAP - ew; // symmetric left edge
+      var edgeBlk = Object.assign({}, panelBlk, {
+        total_panels: rightXs.length, panels_per_string: rightXs.length, w:ew, name:'FLOAT_EDGE'
+      });
+      for (var ri = 0; ri < rowData.length - 1; ri += 2) {
+        var y0 = rowData[ri].y, y1 = rowData[ri+1].y;
+        // right side
+        if (allInPoly(rightXs[0], y0, ew, bh) && allInPoly(rightXs[0], y1, ew, bh)) {
+          var ex = rightXs[0];
+          tables.push({outline:[[ex,y0],[ex+ew,y0],[ex+ew,y0+bh],[ex,y0+bh]], block:edgeBlk, partial:true});
+          tables.push({outline:[[ex,y1],[ex+ew,y1],[ex+ew,y1+bh],[ex,y1+bh]], block:edgeBlk, partial:true});
+        }
+        // left side (symmetric)
+        if (allInPoly(lx, y0, ew, bh) && allInPoly(lx, y1, ew, bh)) {
+          tables.push({outline:[[lx,y0],[lx+ew,y0],[lx+ew,y0+bh],[lx,y0+bh]], block:edgeBlk, partial:true});
+          tables.push({outline:[[lx,y1],[lx+ew,y1],[lx+ew,y1+bh],[lx,y1+bh]], block:edgeBlk, partial:true});
+        }
       }
     }
   }
 
   if (!tables.length) throw new Error('לא נוצרו שולחנות.\nנסה להקטין Setback מהגדה.');
-  var tp = tables.length; // 1 panel per table entry
-  var kw = tp * pWp / 1000;
-  return {tables:tables, shrunk:sh, totalPanels:tp, kw:kw, cx:cx, cy:cy, rr:rr, floating:true};
+  var tp = tables.reduce(function(s,t){ return s + t.block.total_panels; }, 0);
+  return {tables:tables, shrunk:sh, totalPanels:tp, kw:tp*pWp/1000, cx:cx, cy:cy, rr:0, floating:true};
 }
 
 
