@@ -776,6 +776,47 @@ function computeLayout(poly) {
     return false;
   }
 
+  var edgeMode = (document.querySelector('input[name="edge"]:checked') || {value:'full'}).value;
+
+  // Sutherland-Hodgman clipping
+  function clipPolyByHalfPlane(poly, ax, ay, bx, by) {
+    if (!poly.length) return [];
+    var out = [];
+    var nx = -(by-ay), ny = (bx-ax);
+    function inside(p) { return (p[0]-ax)*nx+(p[1]-ay)*ny >= 0; }
+    function intersect(a,b) {
+      var dx=b[0]-a[0],dy=b[1]-a[1];
+      var t=((ax-a[0])*nx+(ay-a[1])*ny)/(dx*nx+dy*ny);
+      return [a[0]+t*dx,a[1]+t*dy];
+    }
+    for (var i=0;i<poly.length;i++) {
+      var cur=poly[i], prev=poly[(i-1+poly.length)%poly.length];
+      var cin=inside(cur), pin=inside(prev);
+      if (cin){if(!pin) out.push(intersect(prev,cur)); out.push(cur);}
+      else if(pin) out.push(intersect(prev,cur));
+    }
+    return out;
+  }
+
+  function clipRectToPoly(x,y,bw,bh,poly) {
+    var clipped=[[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]];
+    var n=poly.length;
+    for (var i=0;i<n;i++) {
+      var a=poly[i], b=poly[(i+1)%n];
+      clipped=clipPolyByHalfPlane(clipped,a[0],a[1],b[0],b[1]);
+      if (!clipped.length) return null;
+    }
+    return clipped.length>=3 ? clipped : null;
+  }
+
+  function clipArea(clipped) {
+    var area=0;
+    for (var i=0,j=clipped.length-1;i<clipped.length;j=i++) {
+      area+=clipped[j][0]*clipped[i][1]-clipped[i][0]*clipped[j][1];
+    }
+    return Math.abs(area/2);
+  }
+
   // Check if all 4 corners of rect are inside shrunken polygon
   function allIn(x, y, bw, bh) {
     if (!pip(x,     y,     rs)) return false;
@@ -783,6 +824,14 @@ function computeLayout(poly) {
     if (!pip(x+bw,  y+bh,  rs)) return false;
     if (!pip(x,     y+bh,  rs)) return false;
     return true;
+  }
+
+  // Check if rect has any overlap with polygon (for partial mode)
+  function anyIn(x, y, bw, bh) {
+    if (allIn(x,y,bw,bh)) return true;
+    var clipped = clipRectToPoly(x,y,bw,bh,rs);
+    if (!clipped) return false;
+    return clipArea(clipped) > 0.1; // at least 0.1 m2 overlap
   }
 
   // Check if rect overlaps any already-placed table (AABB in rotated space)
@@ -815,17 +864,19 @@ function computeLayout(poly) {
             var blk = blocks[bi];
             var bw = blk.w, bh = blk.h;
             if (y + bh > b.mxy + 0.001) continue;
-            if (!allIn(x, y, bw, bh)) {
-              // not inside polygon — advance by small step and retry
-              y += 0.5; placed = true; break;
-            }
+            var inPoly = allIn(x,y,bw,bh);
+            if (!inPoly && edgeMode==='full') { y += 0.5; placed=true; break; }
+            if (!inPoly && edgeMode==='partial' && !anyIn(x,y,bw,bh)) { y += 0.5; placed=true; break; }
             if (exclOverlaps(x, y, bw, bh) || tableOverlaps(x, y, bw, bh, tables)) {
               y += bh + GAP; placed = true; break;
             }
-            var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
+            var clipped = (!inPoly && edgeMode==='partial') ? clipRectToPoly(x,y,bw,bh,rs) : null;
+            var outline = (clipped || [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]]).map(function(p){
               return rot(p[0],p[1],cx,cy,-rr);
             });
-            tables.push({outline:outline, block:blk, rotX:x, rotY:y});
+            var partialFrac = clipped ? clipArea(clipped)/(bw*bh) : 1;
+            var partialBlock = clipped ? Object.assign({},blk,{total_panels:Math.round(blk.total_panels*partialFrac)}) : blk;
+            tables.push({outline:outline, block:partialBlock, rotX:x, rotY:y, partial:!!clipped});
             y += bh + GAP;
             placed = true;
             break;
@@ -847,14 +898,19 @@ function computeLayout(poly) {
             var bw = blk.w, bh = blk.h;
             if (x + bw > b.mxx + 0.001) continue;
             if (Math.abs(bh - rowH) > 0.5) continue;
-            if (!allIn(x, y, bw, bh)) { x += 0.5; placed = true; break; }
+            var inPoly = allIn(x,y,bw,bh);
+            if (!inPoly && edgeMode==='full') { x += 0.5; placed=true; break; }
+            if (!inPoly && edgeMode==='partial' && !anyIn(x,y,bw,bh)) { x += 0.5; placed=true; break; }
             if (exclOverlaps(x, y, bw, bh) || tableOverlaps(x, y, bw, bh, tables)) {
               x += bw + GAP; placed = true; break;
             }
-            var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
+            var clipped = (!inPoly && edgeMode==='partial') ? clipRectToPoly(x,y,bw,bh,rs) : null;
+            var outline = (clipped || [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]]).map(function(p){
               return rot(p[0],p[1],cx,cy,-rr);
             });
-            tables.push({outline:outline, block:blk, rotX:x, rotY:y});
+            var partialFrac = clipped ? clipArea(clipped)/(bw*bh) : 1;
+            var partialBlock = clipped ? Object.assign({},blk,{total_panels:Math.round(blk.total_panels*partialFrac)}) : blk;
+            tables.push({outline:outline, block:partialBlock, rotX:x, rotY:y, partial:!!clipped});
             x += bw + GAP;
             placed = true;
             break;
@@ -877,14 +933,19 @@ function computeLayout(poly) {
           var bw = blk.w, bh = blk.h;
           if (x + bw > b.mxx + 0.001) continue;
           if (Math.abs(bh - rowH) > 0.5) continue;
-          if (!allIn(x, y, bw, bh)) { x += 0.5; placed = true; break; }
+          var inPoly = allIn(x,y,bw,bh);
+          if (!inPoly && edgeMode==='full') { x += 0.5; placed=true; break; }
+          if (!inPoly && edgeMode==='partial' && !anyIn(x,y,bw,bh)) { x += 0.5; placed=true; break; }
           if (exclOverlaps(x, y, bw, bh) || tableOverlaps(x, y, bw, bh, tables)) {
             x += bw + GAP; placed = true; break;
           }
-          var outline = [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]].map(function(p){
+          var clipped = (!inPoly && edgeMode==='partial') ? clipRectToPoly(x,y,bw,bh,rs) : null;
+          var outline = (clipped || [[x,y],[x+bw,y],[x+bw,y+bh],[x,y+bh]]).map(function(p){
             return rot(p[0],p[1],cx,cy,-rr);
           });
-          tables.push({outline:outline, block:blk, rotX:x, rotY:y});
+          var partialFrac = clipped ? clipArea(clipped)/(bw*bh) : 1;
+          var partialBlock = clipped ? Object.assign({},blk,{total_panels:Math.round(blk.total_panels*partialFrac)}) : blk;
+          tables.push({outline:outline, block:partialBlock, rotX:x, rotY:y, partial:!!clipped});
           x += bw + GAP;
           placed = true;
           break;
